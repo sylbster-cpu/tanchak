@@ -470,9 +470,9 @@ const ICONS = {
 const SHELLS = [
   { id: 'basic', name: '기본탄', uses: Infinity, r: 38, dmg: 32, gMul: 1, vMul: 1, windMul: 1, delay: 780, desc: '무제한' },
   { id: 'heavy', name: '대형탄', uses: 2, r: 62, dmg: 46, gMul: 1.18, vMul: 0.96, windMul: 0.8, delay: 1450, desc: '폭발 범위가 넓고 바람을 덜 탐' },
-  { id: 'split', name: '분열탄', uses: 2, r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1, split: true, delay: 1150, desc: '꼭대기에서 셋으로 갈라짐' },
+  { id: 'split', name: '분열탄', uses: 2, r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1, split: true, delay: 1000, desc: '꼭대기에서 셋으로 갈라짐' },
   { id: 'drill', name: '굴착탄', uses: 2, r: 34, dmg: 30, gMul: 1, vMul: 1, windMul: 1, drill: true, delay: 940, desc: '땅을 파고든 뒤 터짐' },
-  { id: 'calm', name: '무풍탄', uses: 2, r: 30, dmg: 26, gMul: 1, vMul: 1, windMul: 0, delay: 880, desc: '바람을 받지 않음' },
+  { id: 'calm', name: '무풍탄', uses: 2, r: 32, dmg: 30, gMul: 1, vMul: 1, windMul: 0, delay: 840, desc: '바람을 받지 않음' },
   // the two below are mobile-only shells; split and drill above are mobile-only too (see MOBILES)
   { id: 'pierce', name: '철갑탄', uses: 2, r: 26, dmg: 24, directMul: 2.4, gMul: 1, vMul: 1.05, windMul: 0.7, delay: 1000, desc: '빠르고 직격하면 피해 ×2.4' },
   { id: 'bounce', name: '도약탄', uses: 2, r: 34, dmg: 30, gMul: 1, vMul: 1, windMul: 1, bounce: true, delay: 900, desc: '땅에 한 번 튕긴 뒤 터짐' }
@@ -480,12 +480,14 @@ const SHELLS = [
 // Mobiles (our own values, not taken from GunBound). Each has the three shared shells plus one of its own.
 // ang is the barrel range measured from the hull; climb is the highest step (px) it can drive up.
 const MOBILES = [
-  { id: 'light', name: '경전차', desc: '빠르고 멀리 움직임. 체력이 낮음', hp: 85, fuel: 180, speed: 1.25, climb: 14, ang: [0, 80], shells: ['basic', 'heavy', 'calm', 'bounce'] },
-  { id: 'armored', name: '중전차', desc: '단단하지만 느리고 높이 못 쏨', hp: 130, fuel: 80, speed: 0.8, climb: 9, ang: [0, 55], shells: ['basic', 'heavy', 'calm', 'pierce'] },
-  { id: 'howitzer', name: '곡사포', desc: '높게만 쏨. 언덕 너머를 노림', hp: 95, fuel: 110, speed: 1, climb: 11, ang: [40, 90], shells: ['basic', 'heavy', 'calm', 'split'] },
+  { id: 'light', name: '경전차', desc: '빠르고 멀리 움직임. 체력이 낮음', hp: 90, fuel: 180, speed: 1.25, climb: 14, delayMul: 0.95, ang: [0, 80], shells: ['basic', 'heavy', 'calm', 'bounce'] },
+  { id: 'armored', name: '중전차', desc: '단단하지만 느리고 높이 못 쏨. 장전이 느림', hp: 110, fuel: 80, speed: 0.8, climb: 9, delayMul: 1.12, ang: [0, 55], shells: ['basic', 'heavy', 'calm', 'pierce'] },
+  { id: 'howitzer', name: '곡사포', desc: '높게만 쏨. 언덕 너머를 노림', hp: 105, fuel: 110, speed: 1, climb: 11, delayMul: 0.95, ang: [40, 90], shells: ['basic', 'heavy', 'calm', 'split'] },
   { id: 'digger', name: '굴착차', desc: '비탈을 잘 오르고 땅을 파고듦', hp: 105, fuel: 130, speed: 1, climb: 18, ang: [15, 75], shells: ['basic', 'heavy', 'calm', 'drill'] }
 ];
 const MOBILE = Object.fromEntries(MOBILES.map(m => [m.id, m]));
+// a shot's delay on this mobile (some reload faster or slower: MOBILES[].delayMul)
+function shotDelay(t, id){ return Math.round(SHELL[id].delay * (t.m.delayMul || 1)); }
 const DEFAULT_PICKS = ['digger', 'digger'];   // used when a game starts without a choice (tests, the idle scene picks its own)
 // white silhouettes for the player plates, facing right (the right-hand plate mirrors them)
 const MOBILE_ICONS = {
@@ -499,6 +501,8 @@ const MOBILE_ICONS = {
 const PASS_DELAY = 500;
 const TURN_PHASES = ['aim', 'charging', 'aiThink', 'aiMove', 'aiAim', 'aiCharge'];
 const SHELL = Object.fromEntries(SHELLS.map(s => [s.id, s]));
+const SPLIT_SPREAD = [-115, 0, 115];   // sideways speed added to each piece of a split shell
+const SPLIT_REPEAT = 0.5;              // a second or third piece hitting the same tank does this share of its damage
 SHELL.child = { id: 'child', r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1 };
 
 /* ---------- canvas & view ---------- */
@@ -754,7 +758,8 @@ function makeTank(i, x, mid){
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
-function isHuman(i){ return mode !== 'ai' || i === 0; }
+let autoAll = false;   // tests/balance.py: the computer plays both sides
+function isHuman(i){ return !autoAll && (mode !== 'ai' || i === 0); }
 function shooterCanAct(){ return mode !== 'practice' || cur === 0; }
 
 let gamePicks = DEFAULT_PICKS.slice();
@@ -861,11 +866,11 @@ function aimDir(t, facing, rel){ const e = worldElev(t, facing, rel) * DEG; retu
 
 function fire(t, p){
   const def = SHELL[t.sel];
-  t.delay += def.delay + Math.floor(turnT) * 10;
+  t.delay += shotDelay(t, t.sel) + Math.floor(turnT) * 10;
   playCard(t, t.sel);
   const pv = pivot(t), dir = aimDir(t, t.facing, t.elev);
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
-  const shot = { owner: t, hit: false, direct: false };
+  const shot = { owner: t, hit: false, direct: false, pieceHits: new Map() };
   shells.push({ x: pv.x + dir.x * MUZZLE, y: pv.y + dir.y * MUZZLE, vx: dir.x * v, vy: dir.y * v, type: t.sel, owner: t, shot, age: 0, trail: [], dead: false, drilling: false, drillLeft: 0, carveAcc: 0, splitDone: false, bounced: false, bounceT: 0 });
   t.lastPower = p; t.lastElev = t.elev; t.lastFacing = t.facing;
   stats[t.i].shots++;
@@ -901,6 +906,11 @@ function explode(x, y, def, direct, owner, shot){
     if (t === direct) dmg = Math.round(def.dmg * (def.directMul || 1.25));
     else if (d < def.r + TANK_R) dmg = Math.round(def.dmg * clamp(1 - (d - 10) / (def.r + TANK_R), 0, 1));
     if (dmg <= 0) continue;
+    if (shot && def.id === 'child'){   // pieces of one split shell do not stack in full on one tank
+      const n = shot.pieceHits.get(t) || 0;
+      if (n) dmg = Math.round(dmg * SPLIT_REPEAT);
+      shot.pieceHits.set(t, n + 1);
+    }
     anyHit = true;
     if (t !== owner){ hitEnemy = true; bestEnemy = Math.max(bestEnemy, dmg); }
     t.hp = Math.max(0, t.hp - dmg); t.hurt = 1;
@@ -976,22 +986,31 @@ function bounceOff(b, h){
 /* ---------- computer opponent ---------- */
 function simulate(t, facing, rel, p, def, target){
   const pv = pivot(t), dir = aimDir(t, facing, rel);
-  let x = pv.x + dir.x * MUZZLE, y = pv.y + dir.y * MUZZLE;
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
-  let vx = dir.x * v, vy = dir.y * v;
+  return flight(t, pv.x + dir.x * MUZZLE, pv.y + dir.y * MUZZLE, dir.x * v, dir.y * v, def, target, 0);
+}
+// How close a shell from this state lands to the target (0 = direct hit), following updateShells' rules.
+// A split shell follows all three pieces from the top of its arc and scores the closest one.
+function flight(t, x, y, vx, vy, def, target, age){
   // a bounce depends on exactly where the shell meets the ground, so that shell is stepped like the real one (1/240 s)
   const h = def.bounce ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
   let drilling = false, left = 150, bounced = false, fuse = 0;
   const b = { x: 0, y: 0, vx: 0, vy: 0 };
   const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90) d += 600; return d; };
-  for (let i = 0, n = Math.ceil(12.5 / h); i < n; i++){
+  for (let i = 0, n = Math.ceil((12.5 - age) / h); i < n; i++){
+    age += h;
+    if (def.split && vy > 0 && age > 0.2){
+      let best = 1e9;
+      for (const off of SPLIT_SPREAD) best = Math.min(best, flight(t, x, y, vx + off, vy, SHELL.child, target, 0.3));
+      return best;
+    }
     if (drilling){ vy += S.gravity * 0.35 * h; x += vx * h; y += vy * h; left -= Math.hypot(vx, vy) * h; }
     else { vx += wa * h; vy += g * h; x += vx * h; y += vy * h; }
     if ((x - tx) * (x - tx) + (y - ty) * (y - ty) < TANK_R * TANK_R) return 0;
     if (x < -400 || x > W + 400 || y > H + 60) return 1e9;
     if (drilling){ if (left <= 0) return score(x, y); continue; }
     if (bounced && (fuse += h) > BOUNCE_FUSE) return score(x, y);
-    if (i * h > 0.07 && isSolid(x, y)){
+    if (age > 0.07 && isSolid(x, y)){
       if (def.drill){ drilling = true; vx *= 0.5; vy *= 0.5; continue; }
       if (def.bounce && !bounced){
         b.x = x; b.y = y; b.vx = vx; b.vy = vy; bounceOff(b, h);
@@ -1002,6 +1021,7 @@ function simulate(t, facing, rel, p, def, target){
   }
   return 1e9;
 }
+
 // Difficulty is one number, aiSkill: it sets the aiming error, and from AI_SMART up the computer also drives
 // to a better spot when it has no clean shot and weighs each shell's damage against its delay.
 const AI_LEVELS = [['쉬움', 0.2], ['보통', 0.5], ['어려움', 0.85]];
@@ -1079,8 +1099,8 @@ function shellValue(t, target, def, r){
   if (def.windMul === 0) v += Math.abs(wind) / Math.max(1, S.windMax) * 6;   // steadier in a strong wind
   if (shotDamage(def, r.d) >= target.hp) v += 40 * Math.min(1, r.ev / Math.max(1, target.hp));   // a likely finishing blow
   if (S.delayOn && mode !== 'practice'){
-    const o = tanks[1 - t.i], after = t.delay + def.delay + Math.floor(turnT) * 10;
-    v -= (def.delay - SHELL.basic.delay) * 0.008;
+    const o = tanks[1 - t.i], after = t.delay + shotDelay(t, def.id) + Math.floor(turnT) * 10;
+    v -= (shotDelay(t, def.id) - shotDelay(t, 'basic')) * 0.008;
     if (after - o.delay > SHELL.basic.delay) v -= 18;   // the other side would get two turns in a row
   }
   return v;
@@ -1214,8 +1234,8 @@ function renderCards(){
     if (isSel) selDone = true;
     if (hidden && !basic && !(isSel && shown)) return `<div class="card back" aria-label="가려진 카드"></div>`;
     const fresh = !basic && i - 1 === t.freshSlot && now < t.freshUntil;
-    return `<button class="card${isSel ? ' sel' : ''}${fresh ? ' fresh' : ''}" type="button" data-shell="${id}" ${ctl ? '' : 'disabled'} aria-pressed="${isSel}" aria-label="${s.name}, ${basic ? '무제한' : '카드'}, 딜레이 ${s.delay}">
-      <span class="k">${i + 1}</span><span class="well">${ICONS[id]}${basic ? '<span class="bd">∞</span>' : ''}</span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${basic ? '∞ · ' : ''}<span class="dl">${s.delay}</span></span></span></button>`;
+    return `<button class="card${isSel ? ' sel' : ''}${fresh ? ' fresh' : ''}" type="button" data-shell="${id}" ${ctl ? '' : 'disabled'} aria-pressed="${isSel}" aria-label="${s.name}, ${basic ? '무제한' : '카드'}, 딜레이 ${shotDelay(t, id)}">
+      <span class="k">${i + 1}</span><span class="well">${ICONS[id]}${basic ? '<span class="bd">∞</span>' : ''}</span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${basic ? '∞ · ' : ''}<span class="dl">${shotDelay(t, id)}</span></span></span></button>`;
   };
   box.innerHTML = ['basic', ...t.hand].map(slot).join('') + `<div class="deck" title="덱에 남은 카드" aria-label="덱에 ${t.deck.length}장 남음"><b>${t.deck.length}</b></div>`;
 }
@@ -1223,7 +1243,7 @@ $('#cards').addEventListener('click', e => { const b = e.target.closest('.card')
 function selectCard(id){
   const t = tanks[cur];
   if (!t || !isHuman(cur) || phase !== 'aim' || !hasShell(t, id)) return;
-  if (t.sel !== id){ t.sel = id; Snd.tick(0.6); renderCards(); const s = SHELL[id]; toast(`${s.name} · ${s.desc}` + (S.delayOn && mode !== 'practice' ? ` · 딜레이 ${s.delay}` : ''), 1800); }
+  if (t.sel !== id){ t.sel = id; Snd.tick(0.6); renderCards(); const s = SHELL[id]; toast(`${s.name} · ${s.desc}` + (S.delayOn && mode !== 'practice' ? ` · 딜레이 ${shotDelay(t, id)}` : ''), 1800); }
 }
 
 /* ---------- update ---------- */
@@ -1386,7 +1406,7 @@ function updateShells(dt){
       s.age += h;
       if (def.split && !s.splitDone && s.vy > 0 && s.age > 0.2){
         s.splitDone = true; s.dead = true;
-        for (const off of [-115, 0, 115]) shells.push({ x: s.x, y: s.y, vx: s.vx + off, vy: s.vy, type: 'child', owner: s.owner, shot: s.shot, age: 0.3, trail: [], dead: false });
+        for (const off of SPLIT_SPREAD) shells.push({ x: s.x, y: s.y, vx: s.vx + off, vy: s.vy, type: 'child', owner: s.owner, shot: s.shot, age: 0.3, trail: [], dead: false });
         if (J('particles')) for (let n = 0; n < 8; n++) parts.push({ x: s.x, y: s.y, vx: rand(-120, 120), vy: rand(-120, 60), life: 0.25, max: 0.25, size: 3, kind: 'spark', g: 0 });
         Snd.pop();
         continue;
@@ -2044,7 +2064,7 @@ function updateHUD(){
       const o = tanks[1 - i], base = Math.min(tk.delay, o.delay);
       html = '딜레이 ' + (tk.delay - base);
       if (i === cur && TURN_PHASES.includes(phase)){
-        const proj = tk.delay + SHELL[tk.sel].delay + Math.floor(turnT) * 10 - base, again = proj < o.delay - base;
+        const proj = tk.delay + shotDelay(tk, tk.sel) + Math.floor(turnT) * 10 - base, again = proj < o.delay - base;
         html += ` → <em${again ? ' class="go"' : ''}>${proj}${again ? ' 한 번 더' : ''}</em>`;
       }
     }
@@ -2258,13 +2278,15 @@ function renderPick(){
   $('#pick-title').textContent = who + '기체 고르기';
   renderDiff();
   const box = $('#mobiles');
+  const topHp = Math.max(...MOBILES.map(m => m.hp)), topFuel = Math.max(...MOBILES.map(m => m.fuel));
   box.innerHTML = MOBILES.map(m => {
     const own = SHELL[m.shells[m.shells.length - 1]];
-    return `<button class="mob${lastPicks[pickStep] === m.id ? ' last' : ''}" type="button" data-mob="${m.id}" aria-label="${m.name}. ${m.desc}. 체력 ${m.hp}, 이동 ${m.fuel}, 각도 ${m.ang[0]}~${m.ang[1]}도, 전용탄 ${own.name}">
+    return `<button class="mob${lastPicks[pickStep] === m.id ? ' last' : ''}" type="button" data-mob="${m.id}" aria-label="${m.name}. ${m.desc}. 체력 ${m.hp}, 이동 ${m.fuel}, 각도 ${m.ang[0]}~${m.ang[1]}도, 딜레이 ×${m.delayMul || 1}, 전용탄 ${own.name}">
       <canvas aria-hidden="true"></canvas><b>${m.name}</b><span class="role">${m.desc}</span>
-      <dl><dt>체력</dt><dd><span class="bar"><i style="width:${Math.round(m.hp / 130 * 100)}%"></i></span>${m.hp}</dd>
-      <dt>이동</dt><dd><span class="bar"><i style="width:${Math.round(m.fuel / 180 * 100)}%"></i></span>${m.fuel}</dd>
+      <dl><dt>체력</dt><dd><span class="bar"><i style="width:${Math.round(m.hp / topHp * 100)}%"></i></span>${m.hp}</dd>
+      <dt>이동</dt><dd><span class="bar"><i style="width:${Math.round(m.fuel / topFuel * 100)}%"></i></span>${m.fuel}</dd>
       <dt>각도</dt><dd>${m.ang[0]}~${m.ang[1]}°</dd>
+      <dt>장전</dt><dd>${(m.delayMul || 1) === 1 ? '보통' : (m.delayMul < 1 ? '빠름' : '느림') + ' ×' + (m.delayMul || 1)}</dd>
       <dt>전용</dt><dd>${own.name}</dd></dl></button>`;
   }).join('');
   requestAnimationFrame(() => box.querySelectorAll('.mob').forEach(b => drawPreview(b.querySelector('canvas'), b.dataset.mob, pickStep)));
@@ -2386,7 +2408,7 @@ function start(data){
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
   toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
-  setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; },
+  setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; },
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 // The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.
