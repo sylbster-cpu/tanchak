@@ -142,7 +142,7 @@ with sync_playwright() as p:
           [o["cur"] for o in r] == [0, 1] and all(40 < o["x"] < o["cw"] - 40 and o["top"] < o["y"] < o["bot"] for o in r), r)
 
     r = ev("""(()=>{const T=window.__tc;const tt=T.S().turnTime,sk=T.S().aiSkill;T.S().turnTime=0;T.S().aiSkill=1;const out=[];
-      for(let k=0;k<3;k++){T.startGame('duo');for(let i=0;i<60;i++)T.update(1/60);const a=T.get().tanks[0];const pl=T.planShot(a);a.sel='basic';a.facing=pl.facing;a.elev=pl.elev;T.fire(a,pl.power);
+      for(let k=0;k<3;k++){T.startGame('duo');for(let i=0;i<60;i++)T.update(1/60);const a=T.get().tanks[0];const pl=T.planShot(a,false,'basic');a.facing=pl.facing;a.elev=pl.elev;T.fire(a,pl.power);
         let n=0,off=0;for(let i=0;i<900&&T.get().phase==='flying';i++){T.update(1/60);for(const s of T.get().shells){n++;const p=T.toScreen(s.x,s.y);if(p.x<0||p.x>T.view().cw)off++;}}
         out.push({frames:n,offscreen:off});}
       T.S().turnTime=tt;T.S().aiSkill=sk; return out;})()""")
