@@ -48,7 +48,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;let best={hpLost:0};
       for(let el=40;el<=88;el+=4){for(let pw=20;pw<=100;pw+=4){
         T.startGame('duo'); const g=T.get(), a=g.tanks[0], b=g.tanks[1]; b.x=a.x+180; b.y=0; for(let i=0;i<90;i++)T.update(1/60);
-        T.setHand(a,['split']); a.sel='split'; a.facing=1; a.elev=el; T.fire(a,pw); for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
+        T.setAmmo(a,['split']); a.sel='split'; a.facing=1; a.elev=el; T.fire(a,pw); for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
         const st=T.get().stats[0], lost=b.maxHp-b.hp; if(lost>best.hpLost) best={hits:st.hits, shots:st.shots, direct:st.direct, hpLost:lost};
       }} return best;})()""")
     check("split shell: hits never exceed shots", r.get("hits", 0) <= r.get("shots", 1) and r.get("direct", 0) <= r.get("hits", 0), r)
@@ -79,7 +79,7 @@ with sync_playwright() as p:
     # At full skill the computer's drill shots should land (it used to plan them like normal shells).
     r = ev("""(()=>{const T=window.__tc;const res=[]; const s0=T.S().aiSkill; T.S().aiSkill=1;
       for(let k=0;k<4;k++){T.startGame('ai');const g=T.get(), a=g.tanks[1], b=g.tanks[0];
-        T.setHand(a,['drill','drill']);
+        T.setAmmo(a,['drill','drill']);
         const pl=T.planShot(a,false,'drill');
         a.facing=pl.facing; a.elev=pl.elev; const hp0=b.hp; T.fire(a,pl.power);
         for(let i=0;i<900;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
@@ -106,7 +106,7 @@ with sync_playwright() as p:
 
     # Delay order: lowest delay moves next, values are normalised so the leader sits at 0.
     r = ev("""(()=>{const T=window.__tc;T.startGame('duo');const seq=[];
-      const shoot=sel=>{let g=T.get();const t=g.tanks[g.cur];T.setHand(t,[sel,sel,sel]);t.sel=sel;t.facing=t.i===0?-1:1;t.elev=45;T.fire(t,100);
+      const shoot=sel=>{let g=T.get();const t=g.tanks[g.cur];T.setAmmo(t,[sel,sel,sel]);t.sel=sel;t.facing=t.i===0?-1:1;t.elev=45;T.fire(t,100);
         for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase==='aim')break;} g=T.get(); seq.push([g.cur, g.tanks[0].delay, g.tanks[1].delay]);};
       shoot('basic'); shoot('heavy'); shoot('heavy'); shoot('heavy'); shoot('basic'); return seq;})()""")
     # P1 basic 780 → P2; P2 heavy 1450 → P1 (P2 at 670); P1 heavy → [780,0] → P2; P2 heavy → [0,670] → P1;
@@ -185,14 +185,14 @@ with sync_playwright() as p:
       for(const m of T.MOBILES){T.startGame('duo',[m.id,m.id]);for(let i=0;i<30;i++)T.update(1/60);const t=T.get().tanks[0];
         key('ArrowUp',true);for(let i=0;i<240;i++)T.update(1/60);key('ArrowUp',false);const hi=Math.round(t.elev);
         key('ArrowDown',true);for(let i=0;i<240;i++)T.update(1/60);key('ArrowDown',false);const lo=Math.round(t.elev);
-        out[m.id]={lo,hi,want:m.ang,hp:t.hp,maxHp:t.maxHp,fuel:t.fuel,hand:t.hand.slice(),deck:t.deck.length,own:m.shells[m.shells.length-1],shells:m.shells};}
+        out[m.id]={lo,hi,want:m.ang,hp:t.hp,maxHp:t.maxHp,fuel:t.fuel,ammo:t.ammo,shells:m.shells,hand:t.hand.slice()};}
       T.S().turnTime=tt; return out;})()""")
     m_ok = all(v["lo"] == v["want"][0] and v["hi"] == v["want"][1] for v in r.values())
     check("mobiles: the barrel stops at each mobile's angle range", m_ok, {k: [v["lo"], v["hi"]] for k, v in r.items()})
-    check("mobiles: hp, fuel and a hand dealt from the mobile's own shells",
-          all(v["hp"] == v["maxHp"] and len(v["hand"]) == 3 and v["deck"] == 4 and all(h in v["shells"] and h != "basic" for h in v["hand"]) for v in r.values())
+    check("mobiles: hp, fuel and the mobile's four shells (basic unlimited, others 2)",
+          all(v["hp"] == v["maxHp"] and sorted(v["ammo"]) == sorted(v["shells"]) and all(n == 2 for k, n in v["ammo"].items() if k != "basic") for v in r.values())
           and len({v["maxHp"] for v in r.values()}) > 1 and len({v["fuel"] for v in r.values()}) > 1,
-          {k: [v["maxHp"], v["fuel"], v["hand"]] for k, v in r.items()})
+          {k: [v["maxHp"], v["fuel"], v["shells"][-1]] for k, v in r.items()})
 
     r = ev("""(()=>{const T=window.__tc;const out={};
       for(const m of T.MOBILES){let lo=99,hi=-1;for(let k=0;k<6;k++){T.startGame('ai',['digger',m.id]);const pl=T.planShot(T.get().tanks[1]);lo=Math.min(lo,pl.elev);hi=Math.max(hi,pl.elev);}out[m.id]=[lo,hi,m.ang];}
@@ -203,7 +203,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;const s0=T.S().aiSkill,tt=T.S().turnTime;T.S().aiSkill=1;T.S().turnTime=0;const out={};
       for(const m of T.MOBILES){const own=m.shells[m.shells.length-1];let hits=0,bounced=0;
         for(let k=0;k<5;k++){T.startGame('ai',['digger',m.id]);const g=T.get(),a=g.tanks[1],b=g.tanks[0];
-          T.setHand(a,[own,own]);
+          T.setAmmo(a,[own,own]);
           const pl=T.planShot(a,false,own);
           a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);
           for(let i=0;i<900;i++){T.update(1/60);for(const s of T.get().shells)if(s.bounced)bounced++;if(T.get().phase!=='flying')break;}
@@ -223,7 +223,7 @@ with sync_playwright() as p:
 
     r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
       for(let k=0;k<10&&out.length<2;k++){T.startGame('duo',['armored','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];b.x=a.x+260;b.y=0;for(let i=0;i<90;i++)T.update(1/60);
-        T.setHand(a,['pierce','pierce']);a.facing=1;a.elev=40;
+        T.setAmmo(a,['pierce','pierce']);a.facing=1;a.elev=40;
         const s0=T.S().aiSkill;T.S().aiSkill=1;const pl=T.planShot(a,false,'pierce');T.S().aiSkill=s0;
         a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase!=='flying')break;}
         if(T.get().stats[0].direct)out.push(hp0-b.hp);}
@@ -254,37 +254,59 @@ with sync_playwright() as p:
     check("picker: vs computer marks the last choice and gives the computer a mobile",
           r["last"] == "armored" and r2["mode"] == "ai" and r2["mobs"][0] == "light" and r2["mobs"][1] in ("light", "armored", "howitzer", "digger"), {**r, **r2})
 
-    # ---- shells as cards ----
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['armored','digger']);const a=T.get().tanks[0];
-      const deck0=a.deck.length+a.hand.filter(Boolean).length;const all=[...a.deck,...a.hand].sort().join(',');const seen=[];
-      for(let k=0;k<9;k++){const id=a.hand.find(Boolean);if(!id)break;const before=a.deck.length;a.sel=id;T.fire(a,5);
-        for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim')break;}T.endTurn&&0;seen.push([id,before,a.deck.length,a.hand.filter(Boolean).length]);
-        // hand the turn back to the first player
-        const g=T.get();if(g.cur!==0){T.passTurn(false);}}
-      T.S().turnTime=20;return {deck0,all,seen,left:a.hand,sel:a.sel};})()""")
-    check("cards: 7-card deck (2 heavy, 2 calm, 3 own), each play draws one, then the hand runs dry",
-          r["deck0"] == 7 and r["all"] == "calm,calm,heavy,heavy,pierce,pierce,pierce" and len(r["seen"]) == 7
-          and [s[2] for s in r["seen"]] == [3, 2, 1, 0, 0, 0, 0] and [s[3] for s in r["seen"]] == [3, 3, 3, 3, 2, 1, 0]
-          and r["left"] == [None, None, None] and r["sel"] == "basic", r)
+    # ---- effect cards ----
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);const a=T.get().tanks[0];
+      const all=[...a.deck,...a.hand].filter(Boolean).sort().join(',');const hand0=a.hand.length;const seen=[];
+      for(let k=0;k<8;k++){const g=T.get();if(g.cur!==0){T.passTurn(false);}const id=a.hand.find(Boolean);if(!id)break;
+        a.arm=id;a.sel='basic';a.facing=-1;a.elev=80;const d0=a.delay;T.fire(a,8);seen.push([id,a.delay-d0,a.deck.length,a.hand.filter(Boolean).length]);
+        for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim'||T.get().phase==='over')break;}}
+      T.S().turnTime=20;return {all,hand0,seen,fxDelay:{pull:T.FXD.pull.delay,warp:T.FXD.warp.delay}};})()""")
+    check("effect cards: 6-card deck (3 pull, 3 follow), hand of 2, each play adds its delay and draws one",
+          r["all"] == "pull,pull,pull,warp,warp,warp" and r["hand0"] == 2 and len(r["seen"]) == 6
+          and all(s[1] == 780 + r["fxDelay"][s[0]] for s in r["seen"])
+          and [s[2] for s in r["seen"]] == [3, 2, 1, 0, 0, 0] and [s[3] for s in r["seen"]] == [2, 2, 2, 2, 1, 0], r)
 
-    r = ev("""(()=>{const T=window.__tc;T.startGame('practice',['light','digger']);const a=T.get().tanks[0];let n=0;
-      for(let k=0;k<12;k++){const id=a.hand.find(Boolean);if(!id)break;a.sel=id;T.fire(a,5);n++;for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim')break;}}
-      return {played:n,hand:a.hand.filter(Boolean).length};})()""")
-    check("cards: practice deals a fresh deck when it runs out", r["played"] == 12 and r["hand"] == 3, r)
+    # follow: the shooter ends up standing near where the shot burst
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
+      for(let k=0;k<6;k++){T.startGame('duo',['digger','digger']);for(let i=0;i<30;i++)T.update(1/60);const g=T.get(),a=g.tanks[0],b=g.tanks[1];
+        T.setHand(a,['warp']);a.arm='warp';const pl=T.planShot(a,false,'basic');a.facing=pl.facing;a.elev=pl.elev;const x0=a.x;T.fire(a,pl.power*0.7);
+        let boom=null;for(let i=0;i<900;i++){T.update(1/60);const o=T.get().ops.find(o=>o.scorch);if(o&&!boom)boom=Math.round(o.cx);if(T.get().phase==='aim'||T.get().phase==='over')break;}
+        out.push({x0:Math.round(x0),boom,x:Math.round(a.x),air:a.airborne,hop:!!a.hop,gap:Math.round(Math.abs(b.x-a.x))});}
+      T.S().turnTime=20;return out;})()""")
+    landed = [o for o in r if o["boom"] is not None]
+    check("follow card: the shooter lands near where the shot burst, standing, clear of the other tank",
+          landed and all(abs(o["x"] - o["boom"]) <= 262 and abs(o["x"] - o["x0"]) > 40 and not o["air"] and not o["hop"] and o["gap"] >= 56 for o in landed), r)
 
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('ai',['digger','light']);T.passTurn(false);T.renderCards();
-      const think=[...document.querySelectorAll('#cards .card')].map(c=>c.classList.contains('back')?'back':c.dataset.shell);
-      for(let i=0;i<70;i++)T.update(1/60);const g=T.get();const sel=g.tanks[1].sel;
-      const aim=[...document.querySelectorAll('#cards .card')].map(c=>c.classList.contains('back')?'back':c.dataset.shell);
-      T.S().turnTime=20;return {phase:g.phase,think,aim,sel};})()""")
-    check("cards: the computer's hand is face down until it plays a card",
-          r["think"] == ["basic", "back", "back", "back"] and r["phase"] == "aiAim"
-          and r["aim"].count("back") == (3 if r["sel"] == "basic" else 2) and (r["sel"] in r["aim"]), r)
+    # pull: in range, the other tank is brought next to the shooter; out of range nothing moves
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
+      for(let k=0;k<6;k++){T.startGame('duo',['digger','digger']);for(let i=0;i<30;i++)T.update(1/60);const g=T.get(),a=g.tanks[0],b=g.tanks[1];
+        const far=k%2===1;T.setHand(a,['pull']);a.arm='pull';const bx0=b.x;
+        // aim just short of the other tank (in range) or far short of it (out of range)
+        const pl=T.planShot(a,false,'basic');a.facing=pl.facing;a.elev=pl.elev;T.fire(a,far?pl.power*0.55:pl.power);
+        for(let i=0;i<900;i++){T.update(1/60);if(T.get().phase==='aim'||T.get().phase==='over')break;}
+        out.push({far,moved:Math.round(Math.abs(b.x-bx0)),gap:Math.round(Math.abs(b.x-a.x)),air:b.airborne,alive:b.alive});}
+      T.S().turnTime=20;return out;})()""")
+    near = [o for o in r if not o["far"] and o["alive"]]
+    check("pull card: an opponent within range lands beside the shooter; one out of range stays",
+          near and all(100 <= o["gap"] <= 302 and o["moved"] > 100 and not o["air"] for o in near)
+          and all(o["moved"] < 5 for o in r if o["far"]), r)
 
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['howitzer','digger']);for(let i=0;i<20;i++)T.update(1/60);const a=T.get().tanks[0];T.setHand(a,['heavy','split','calm']);T.renderCards();
-      const k=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));k('Digit3');const s3=a.sel;k('Digit1');const s1=a.sel;
-      T.S().turnTime=20;return {s3,s1};})()""")
-    check("cards: number keys pick basic (1) and hand slots (2-4)", r["s3"] == "split" and r["s1"] == "basic", r)
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['light','digger']);for(let i=0;i<30;i++)T.update(1/60);const a=T.get().tanks[0];
+      T.setHand(a,['pull','warp']);T.renderCards();
+      const k=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));
+      k('KeyC');const open=!document.getElementById('fxpop').hidden;const cards=document.querySelectorAll('#fxpop .fxcard').length;
+      document.querySelector('#fxpop [data-fx="1"]').click();const armed=a.arm,closed=document.getElementById('fxpop').hidden,btn=document.getElementById('fx-btn').textContent.includes('따라가기');
+      k('Digit6');const off=a.arm;k('Digit5');const pulled=a.arm;k('Digit2');const shell=a.sel;
+      T.S().turnTime=20;return {open,cards,armed,closed,btn,off,pulled,shell};})()""")
+    check("card button: C opens the hand, a tap arms a card, 5-6 toggle cards, 1-4 still pick shells",
+          r["open"] and r["cards"] == 2 and r["armed"] == "warp" and r["closed"] and r["btn"] and r["off"] is None and r["pulled"] == "pull" and r["shell"] == "heavy", r)
+
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),sk=S.aiSkill,tt=S.turnTime;S.aiSkill=0.85;S.turnTime=0;let tried=0,pulled=0;
+      for(let k=0;k<30&&tried<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];if(me.y>ai.y-60)continue;
+        T.passTurn(false);T.setHand(ai,['pull','warp']);for(let i=0;i<60*4;i++){T.update(1/60);if(T.get().phase==='aiAim')break;}
+        tried++;if(ai.arm==='pull')pulled++;}
+      S.aiSkill=sk;S.turnTime=tt;return {tried,pulled};})()""")
+    check("computer pulls the player down from much higher ground", r["tried"] == 0 or r["pulled"] >= r["tried"] - 1, r)
 
     # ---- computer: difficulty, moving, delay-aware shells, thinking spread over frames ----
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),tt=S.turnTime,sk=S.aiSkill;S.turnTime=0;const out={};const mobs=T.MOBILES.map(m=>m.id);let worst=0;
@@ -313,8 +335,8 @@ with sync_playwright() as p:
 
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),wm=S.windMax,tt=S.turnTime,sk=S.aiSkill;S.windMax=0;S.turnTime=0;S.aiSkill=0.85;const res=[];
       for(let k=0;k<20&&res.length<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];me.x=ai.x-420;me.y=0;for(let i=0;i<120;i++)T.update(1/60);
-        T.passTurn(false);me.delay=0;ai.delay=0;T.setHand(ai,['heavy','heavy','heavy']);const tight=T.planShot(ai);
-        if(tight.miss>0)continue;me.delay=900;T.setHand(ai,['heavy','heavy','heavy']);const loose=T.planShot(ai);res.push([tight.sel,loose.sel]);}
+        T.passTurn(false);me.delay=0;ai.delay=0;T.setAmmo(ai,['heavy','heavy','heavy']);const tight=T.planShot(ai);
+        if(tight.miss>0)continue;me.delay=900;T.setAmmo(ai,['heavy','heavy','heavy']);const loose=T.planShot(ai);res.push([tight.sel,loose.sel]);}
       S.windMax=wm;S.turnTime=tt;S.aiSkill=sk;return res;})()""")
     check("computer skips the heavy shell when its delay would give the player two turns in a row",
           len(r) >= 2 and all(a == "basic" and b == "heavy" for a, b in r), r)

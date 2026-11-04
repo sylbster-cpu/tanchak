@@ -130,13 +130,27 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .card .k{position:absolute;top:2px;right:6px;font-size:10px;color:var(--muted)}
 .card.sel{border-color:var(--brass);background:linear-gradient(180deg,#5a4c26,#2e2716);transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 2px rgba(226,169,72,.3),0 4px 0 rgba(0,0,0,.5)}
 .card:disabled{opacity:.42;cursor:default}
-.card.empty{background:transparent;border:2px dashed rgba(226,169,72,.25);box-shadow:none}
-.card.back{background:repeating-linear-gradient(135deg,#3a2f17 0 6px,#2a2210 6px 12px);border-color:#5f4512;opacity:.85}
+.card.fx{background:repeating-linear-gradient(135deg,#3a3018 0 6px,#2d2512 6px 12px);border-color:#5f4512}
+.card.fx .well{color:#ffd27a}
+.card.fx.armed{background:linear-gradient(180deg,#7a5a1c,#3d2c0d);border-color:#ffd27a;box-shadow:0 0 0 2px rgba(255,210,122,.45),0 3px 0 rgba(0,0,0,.45)}
 .card.fresh{animation:fresh 1.4s ease-out}
 @keyframes fresh{0%{transform:translateY(-8px);box-shadow:0 0 0 3px rgba(255,248,225,.9),0 0 22px rgba(255,210,122,.9)}100%{transform:none}}
-.deck{flex:none;position:relative;width:30px;height:46px;align-self:center;border-radius:7px;display:grid;place-items:center;
-  background:repeating-linear-gradient(135deg,#3a2f17 0 5px,#2a2210 5px 10px);border:2px solid #5f4512;box-shadow:2px 2px 0 #1b1408,4px 4px 0 rgba(0,0,0,.35)}
-.deck b{font-family:var(--display);font-weight:400;font-size:15px;color:var(--amber);text-shadow:0 1px 0 #000}
+#fxpop{position:fixed;z-index:15;display:grid;gap:8px;padding:10px;border-radius:14px;box-sizing:border-box}
+.fx-head{display:flex;align-items:baseline;gap:8px;min-width:0}
+.fx-head b{font-family:var(--display);font-weight:400;font-size:18px;color:#ffd27a}
+.fx-head span{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-list{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
+.fxcard{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto 1fr auto;column-gap:8px;row-gap:2px;align-items:start;text-align:left;padding:8px;border-radius:11px;
+  background:linear-gradient(180deg,#3d3220,#272014);border:2px solid #5f4512;box-shadow:0 3px 0 rgba(0,0,0,.45)}
+.fxcard .well{grid-row:1/4;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--lcd);border:1.5px solid #000;color:#ffd27a}
+.fxcard .well svg{width:22px;height:22px}
+.fxcard b{font-family:var(--display);font-weight:400;font-size:16px}
+.fxcard .d{font-size:11.5px;line-height:1.35;color:var(--muted)}
+.fxcard .c{font-size:11px;font-weight:700;color:var(--amber)}
+.fxcard .k{position:absolute;top:4px;right:7px;font-size:10px;color:var(--muted)}
+.fxcard.on{border-color:#ffd27a;background:linear-gradient(180deg,#7a5a1c,#3d2c0d)}
+.fxcard.empty{display:grid;place-items:center;color:var(--muted);font-size:12px;background:transparent;border:2px dashed rgba(226,169,72,.25);box-shadow:none}
+body.touch .fxcard .k{display:none}
 .card.sel:disabled{opacity:.8}
 body.touch .card .k{display:none}
 .c-fire{display:flex;align-items:center;gap:10px}
@@ -170,7 +184,9 @@ body.touch #btn-fire{display:grid}
   #gauge{height:20px}
   .lcd b{font-size:16px}
   #pow-lcd{min-width:48px}
-  .card{height:44px} .deck{height:38px;width:26px}
+  .card{height:44px}
+  #fxpop{padding:8px;gap:6px} .fxcard{padding:6px} .fxcard .d{font-size:10.5px} .fxcard .well{width:28px;height:28px}
+  .fx-head span{display:none}
   .card .well{width:28px;height:28px} .card .well svg{width:18px;height:18px}
   #btn-fire{width:68px;height:68px;font-size:18px}
   .tbtn{width:42px;height:42px}
@@ -342,7 +358,7 @@ body.touch #btn-fire{display:grid}
     <div id="cards" role="toolbar" aria-label="포탄 고르기"></div>
   </div>
   <div class="c-fire">
-    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 카드 · P 넘기기 · T 조율판</small></div>
+    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 · C 카드(5~7) · P 넘기기 · T 조율판</small></div>
     <div class="tpad angpad">
       <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
       <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
@@ -351,6 +367,7 @@ body.touch #btn-fire{display:grid}
   </div>
 </footer>
 
+<div id="fxpop" class="steel" hidden role="dialog" aria-label="카드"></div>
 <div id="banner" aria-live="polite"></div>
 <div id="toast" class="steel" aria-live="polite"></div>
 
@@ -369,7 +386,7 @@ body.touch #btn-fire{display:grid}
       <button class="mode" type="button" data-mode="duo"><b>둘이서 번갈아</b><span>한 기기로 1P와 2P</span></button>
       <button class="mode" type="button" data-mode="practice"><b>과녁 연습</b><span>상대가 쏘지 않아 손맛 조율에 좋음</span></button>
     </div>
-    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다. 기본탄 말고는 카드로 받습니다. 손패 3장 중 하나를 쓰면 덱에서 새로 1장을 뽑습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1 기본탄·2~4 손패. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
+    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다. 카드는 한 차례에 한 장, 이번 발에 얹는 효과입니다(끌어오기, 따라가기). 쓰면 덱에서 새로 1장을 뽑습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~4 포탄, C 카드. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
   </div>
 </section>
 
@@ -442,7 +459,7 @@ const DEFAULTS = {
   recoil: 1.0, recoilOn: true,
   flashOn: true, numbersOn: true, trailOn: true,
   volume: 0.7, soundOn: true, vibrateOn: true,
-  turnTime: 20, delayOn: true, handSize: 3,
+  turnTime: 20, delayOn: true, handSize: 2,
   aiSkill: 0.5
 };
 let S = Object.assign({}, DEFAULTS);
@@ -731,30 +748,48 @@ const COLORS = [
   { main: '#ff5b49', dark: '#a92a1f', light: '#ffb0a4', ink: '#5a120b' }
 ];
 
-// Shells come as cards. The basic shell is always there; the others are dealt from a per-game deck of
-// DECK_MIX into a hand of S.handSize cards. Playing one draws the next from the deck; when the deck is empty
-// the slot stays empty (practice mode deals a fresh deck instead).
-const DECK_MIX = [['heavy', 2], ['calm', 2], ['own', 3]];
-function buildDeck(m){
-  const own = m.shells[m.shells.length - 1], d = [];
-  for (const [id, n] of DECK_MIX) for (let k = 0; k < n; k++) d.push(id === 'own' ? own : id);
+// Shells: each mobile has its four (MOBILES[].shells). The basic shell never runs out; the others have
+// SPECIAL_USES each per game.
+const SPECIAL_USES = 2;
+function hasShell(t, id){ return t.ammo[id] > 0; }
+
+// Effect cards ride on a turn's shot. They are dealt from a per-game deck (FX_DECK) into a hand of S.handSize;
+// one may be played per turn, it adds its delay to the shot and takes effect where the shot first bursts.
+// Playing one draws the next; an empty deck leaves the slot empty (practice mode deals a fresh deck).
+const PULL_RANGE = 160, PULL_MIN = 100;
+const FX = [
+  { id: 'pull', name: '끌어오기', delay: 150, desc: `떨어진 곳 ${PULL_RANGE}px 안에 상대가 있으면 내 옆으로 끌어옴` },
+  { id: 'warp', name: '따라가기', delay: 120, desc: '포탄이 떨어진 곳으로 내가 옮겨 감' }
+];
+const FXD = Object.fromEntries(FX.map(f => [f.id, f]));
+const FX_DECK = [['pull', 3], ['warp', 3]];
+// The delays are kept small on purpose: with +350 a pull usually handed the pulled player two shots in a row at
+// point-blank range, which made the card a loss.
+const FX_ICONS = {
+  pull: '<svg viewBox="0 0 24 24"><path d="M20 12H8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 7l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="currentColor"/><path d="M3 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".6"/></svg>',
+  warp: '<svg viewBox="0 0 24 24"><path d="M3 19C5 7 15 4 20 12" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 3" stroke-linecap="round"/><path d="M17 8l3.5 4.5L15 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 21h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  stack: '<svg viewBox="0 0 24 24"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".45"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>'
+};
+function buildDeck(){
+  const d = [];
+  for (const [id, n] of FX_DECK) for (let k = 0; k < n; k++) d.push(id);
   for (let i = d.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
   return d;
 }
-function hasShell(t, id){ return id === 'basic' || t.hand.includes(id); }
-function playCard(t, id){
+function playFx(t, id){
   const k = t.hand.indexOf(id);
-  if (id === 'basic' || k < 0) return;
-  if (!t.deck.length && mode === 'practice') t.deck = buildDeck(t.m);
+  if (k < 0) return;
+  if (!t.deck.length && mode === 'practice') t.deck = buildDeck();
   t.hand[k] = t.deck.length ? t.deck.pop() : null;
   t.fresh = t.hand[k] ? k : -1;
 }
 function makeTank(i, x, mid){
   const m = MOBILE[mid] || MOBILE[DEFAULT_PICKS[i]];
-  const deck = buildDeck(m), hand = [];
+  const ammo = {}; m.shells.forEach(id => ammo[id] = id === 'basic' ? Infinity : SPECIAL_USES);
+  const deck = buildDeck(), hand = [];
   for (let k = 0; k < S.handSize; k++) hand.push(deck.length ? deck.pop() : null);
   return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
-    fuel: m.fuel, hand, deck, fresh: -1, freshSlot: -1, freshUntil: 0, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+    fuel: m.fuel, ammo, hand, deck, arm: null, hop: null, fresh: -1, freshUntil: 0, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
@@ -789,7 +824,8 @@ function beginTurn(again){
   const t = tanks[cur];
   t.fuel = t.m.fuel;
   if (!hasShell(t, t.sel)) t.sel = 'basic';
-  if (t.fresh >= 0){ t.freshSlot = t.fresh; t.fresh = -1; t.freshUntil = performance.now() + 1600; }   // light up the card drawn last time
+  t.arm = null; fxOpen = false;
+  if (t.fresh >= 0){ t.fresh = -1; t.freshUntil = performance.now() + 1600; }   // light up the card button: a new card came in
   power = 0; powerDir = 1;
   phaseT = 0;
   phase = isHuman(cur) ? 'aim' : 'aiThink';
@@ -864,13 +900,18 @@ function pivot(t){ const a = t.tilt || 0; return { x: t.x + Math.sin(a) * PIVOT_
 function worldElev(t, facing, rel){ return rel - facing * (t.tilt || 0) / DEG; }
 function aimDir(t, facing, rel){ const e = worldElev(t, facing, rel) * DEG; return { x: facing * Math.cos(e), y: -Math.sin(e) }; }
 
+let lastShot = null;
 function fire(t, p){
   const def = SHELL[t.sel];
-  t.delay += shotDelay(t, t.sel) + Math.floor(turnT) * 10;
-  playCard(t, t.sel);
+  const fx = t.arm && t.hand.includes(t.arm) ? t.arm : null;
+  t.delay += shotDelay(t, t.sel) + (fx ? FXD[fx].delay : 0) + Math.floor(turnT) * 10;
+  if (t.ammo[t.sel] !== Infinity) t.ammo[t.sel]--;
+  if (fx) playFx(t, fx);
+  t.arm = null; fxOpen = false;
   const pv = pivot(t), dir = aimDir(t, t.facing, t.elev);
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
-  const shot = { owner: t, hit: false, direct: false, pieceHits: new Map() };
+  const shot = { owner: t, hit: false, direct: false, pieceHits: new Map(), fx, fxDone: false };
+  lastShot = shot;
   shells.push({ x: pv.x + dir.x * MUZZLE, y: pv.y + dir.y * MUZZLE, vx: dir.x * v, vy: dir.y * v, type: t.sel, owner: t, shot, age: 0, trail: [], dead: false, drilling: false, drillLeft: 0, carveAcc: 0, splitDone: false, bounced: false, bounceT: 0 });
   t.lastPower = p; t.lastElev = t.elev; t.lastFacing = t.facing;
   stats[t.i].shots++;
@@ -890,7 +931,7 @@ function fire(t, p){
   if (J('shake')) addTrauma(0.12 * S.recoil);
   Snd.chargeStop(); Snd.fire(); Snd.whistleStart(); buzz(18);
   phase = 'flying'; phaseT = 0; power = 0;
-  clearLook(); camBlast = null;
+  clearLook(); camBlast = null; hopCam = null;
 }
 function addTrauma(a){ trauma = Math.min(1, trauma + a * S.shake); }
 
@@ -932,6 +973,54 @@ function explode(x, y, def, direct, owner, shot){
   Snd.boom(big, !!direct);
   buzz(direct ? 90 : anyHit ? 55 : 30);
   if (direct) toast('직격!', 700);
+  if (shot && shot.fx && !shot.fxDone){ shot.fxDone = true; timers.push({ at: 0.3, fn: () => applyFx(shot, x, y) }); }
+}
+/* ---------- effect cards: moving tanks ---------- */
+// Somewhere a tank can stand on the surface at x: inside the map, not over a hole to the bottom, level enough,
+// and clear of the other tank.
+function standAt(x, other){
+  x = Math.round(x);
+  if (x < 30 || x > W - 30) return null;
+  const y = groundY(x, 0), gl = groundY(x - 16, 0), gr = groundY(x + 16, 0);
+  if (y >= H - 40 || gl >= H - 20 || gr >= H - 20) return null;
+  if (Math.abs(gl - gr) > 16 || Math.abs(gl - y) > 22 || Math.abs(gr - y) > 22) return null;
+  if (other && other.alive && !other.gone && Math.abs(other.x - x) < 60 && Math.abs(other.y - y) < 50) return null;
+  return { x, y };
+}
+// the nearest standing spot to x0, searching outward up to maxR; dirs limits the side (1, -1) or both (0)
+function nearestStand(x0, other, minR, maxR, dir){
+  for (let k = minR; k <= maxR; k += 4){
+    for (const s of dir ? [dir] : [1, -1]){
+      const p = standAt(x0 + s * k, other);
+      if (p) return p;
+      if (k === 0) break;
+    }
+  }
+  return null;
+}
+function applyFx(shot, x, y){
+  const me = shot.owner, o = tanks[1 - me.i], f = FXD[shot.fx];
+  if (shot.fx === 'warp'){
+    if (!me.alive || me.gone) return;
+    const p = nearestStand(x, o, 0, 260, 0);
+    if (p) hopTo(me, p); else toast(`${f.name}: 설 곳이 없습니다`, 1600);
+  } else if (shot.fx === 'pull'){
+    if (!o || !o.alive || o.gone) return;
+    if (Math.hypot(o.x - x, o.y - TANK_CY - y) > PULL_RANGE){ toast(`${f.name}: 상대가 범위 밖입니다`, 1600); return; }
+    const side = Math.sign(o.x - me.x) || 1;
+    // at least PULL_MIN away, outside the puller's own basic-shell blast
+    const p = nearestStand(me.x, me, PULL_MIN, 300, side) || nearestStand(me.x, me, PULL_MIN, 300, -side);
+    if (p) hopTo(o, p); else toast(`${f.name}: 데려올 곳이 없습니다`, 1600);
+  }
+}
+// a short arc to the new spot, so the eye can follow where the tank went
+function hopTo(t, p){
+  const dist = Math.hypot(p.x - t.x, p.y - t.y);
+  t.hop = { x0: t.x, y0: t.y, x1: p.x, y1: p.y, t: 0, dur: clamp(dist / 900, 0.45, 1.0), lift: 50 + dist * 0.18 };
+  t.airborne = true; t.vy = 0; t.facing = Math.sign(p.x - t.x) || t.facing;
+  hopCam = t;
+  if (J('particles')) for (let k = 0; k < 10; k++) parts.push({ x: t.x + rand(-18, 18), y: t.y - 4, vx: rand(-50, 50), vy: rand(-70, -20), life: 0.6, max: 0.6, size: rand(4, 9), kind: 'smoke', g: -10, dust: true });
+  Snd.pop(); Snd.tick(1);
 }
 function deathBoom(t){
   if (t.gone) return;
@@ -1107,7 +1196,8 @@ function shellValue(t, target, def, r){
 }
 function* planJob(t, mayMove, force){
   const target = tanks[1 - t.i], smart = S.aiSkill >= AI_SMART;
-  const hand = ['basic', ...new Set(t.hand.filter(Boolean))];
+  const hand = Object.keys(t.ammo).filter(id => t.ammo[id] > 0).sort((a, b) => (a === 'basic' ? -1 : b === 'basic' ? 1 : 0));
+  let stuck = false;
   // 1. with no clean shot from here, look for a spot within reach that has one
   if (smart && mayMove && t.fuel > 10){
     const here = yield* searchShot(t, SHELL.basic, target, true);
@@ -1121,6 +1211,7 @@ function* planJob(t, mayMove, force){
         if (r.d < best.d - 10) best = { d: r.d, x: p.x };
       }
       if (best.x !== t.x) return { move: best.x, missHere: here.d, missThere: best.d };
+      stuck = true;   // no clean shot here and none within driving reach
     }
   }
   // 2. the shell: easy picks like a beginner, otherwise the best value
@@ -1139,7 +1230,14 @@ function* planJob(t, mayMove, force){
   // 3. aim it on the full grid, then add the aiming error
   const r = yield* searchShot(t, SHELL[pick], target, false);
   const err = 1 - S.aiSkill;
-  return { sel: pick, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, 5, 100), miss: r.d };
+  // 4. an effect card, by two plain rules: pull the player down off much higher ground, and follow the shot
+  //    out of a spot with no shot and no way to drive to one
+  let fx = null;
+  if (smart && r.d < 1e8){
+    if (t.hand.includes('pull') && target.y < t.y - 60 && r.d < PULL_RANGE * 0.5) fx = 'pull';
+    else if (t.hand.includes('warp') && stuck) fx = 'warp';
+  }
+  return { sel: pick, fx, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, 5, 100), miss: r.d };
 }
 // all at once (tests, and the soak test's stand-in for a human); the game itself runs planJob a few ms per frame
 function planShot(t, mayMove, force){
@@ -1186,8 +1284,12 @@ window.addEventListener('keydown', e => {
     case 'Space': keycap.classList.add('down'); pressFire(); break;
     case 'KeyT': togglePanel(); break;
     case 'KeyP': passTurn(false); break;
+    case 'KeyC': toggleFxPop(); break;
     default:
-      if (/^Digit[1-9]$/.test(e.code) && tanks[cur]){ const id = ['basic', ...tanks[cur].hand][+e.code.slice(5) - 1]; if (id) selectCard(id); }
+      if (/^Digit[1-9]$/.test(e.code) && tanks[cur]){
+        const n = +e.code.slice(5), t = tanks[cur];
+        if (n <= t.m.shells.length) selectCard(t.m.shells[n - 1]); else armFx(n - t.m.shells.length - 1);
+      }
   }
 });
 window.addEventListener('keyup', e => {
@@ -1221,25 +1323,61 @@ const coarse = matchMedia('(pointer: coarse)');
 function setTouch(on){ document.body.classList.toggle('touch', on); checkRotate(); try { syncFull(); } catch (e) {} sizeDial(); measureHud(); sizeMinimap(); }
 
 /* ---------- shell slots ---------- */
+// Console row: the mobile's four shells, then one button for the effect-card hand (it opens #fxpop above the console).
+let fxOpen = false;
 function renderCards(){
   const t = tanks[cur]; const box = $('#cards');
-  if (!t){ box.innerHTML = ''; return; }
-  // the computer's hand stays face down; the card it chose turns up once it starts aiming
-  const hidden = !isHuman(cur), shown = phase === 'aiAim' || phase === 'aiCharge' || phase === 'flying';
-  const ctl = canControl(), now = performance.now();
-  let selDone = false;
-  const slot = (id, i) => {
-    if (!id) return `<div class="card empty" aria-label="빈 칸"><span class="k">${i + 1}</span></div>`;
-    const s = SHELL[id], basic = id === 'basic', isSel = t.sel === id && !selDone;
-    if (isSel) selDone = true;
-    if (hidden && !basic && !(isSel && shown)) return `<div class="card back" aria-label="가려진 카드"></div>`;
-    const fresh = !basic && i - 1 === t.freshSlot && now < t.freshUntil;
-    return `<button class="card${isSel ? ' sel' : ''}${fresh ? ' fresh' : ''}" type="button" data-shell="${id}" ${ctl ? '' : 'disabled'} aria-pressed="${isSel}" aria-label="${s.name}, ${basic ? '무제한' : '카드'}, 딜레이 ${shotDelay(t, id)}">
-      <span class="k">${i + 1}</span><span class="well">${ICONS[id]}${basic ? '<span class="bd">∞</span>' : ''}</span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${basic ? '∞ · ' : ''}<span class="dl">${shotDelay(t, id)}</span></span></span></button>`;
-  };
-  box.innerHTML = ['basic', ...t.hand].map(slot).join('') + `<div class="deck" title="덱에 남은 카드" aria-label="덱에 ${t.deck.length}장 남음"><b>${t.deck.length}</b></div>`;
+  if (!t){ box.innerHTML = ''; renderFxPop(); return; }
+  const ctl = canControl();
+  const shellBtns = t.m.shells.map((id, i) => {
+    const s = SHELL[id], left = t.ammo[id], none = !(left > 0), dl = shotDelay(t, id);
+    return `<button class="card${t.sel === id ? ' sel' : ''}" type="button" data-shell="${id}" ${none || !ctl ? 'disabled' : ''} aria-pressed="${t.sel === id}" aria-label="${s.name}, ${left === Infinity ? '무제한' : left + '발 남음'}, 딜레이 ${dl}">
+      <span class="k">${i + 1}</span><span class="well">${ICONS[id]}<span class="bd">${left === Infinity ? '∞' : left}</span></span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${left === Infinity ? '∞' : left + '발'}<span class="dl"> · ${dl}</span></span></span></button>`;
+  }).join('');
+  const n = t.hand.filter(Boolean).length, armed = t.arm ? FXD[t.arm] : null;
+  const fresh = isHuman(cur) && performance.now() < t.freshUntil;
+  const fxBtn = `<button class="card fx${armed ? ' armed' : ''}${fresh ? ' fresh' : ''}" type="button" id="fx-btn" ${!ctl || !n ? 'disabled' : ''} aria-expanded="${fxOpen}" aria-label="카드 ${n}장${armed ? ', ' + armed.name + ' 준비됨' : ''}">
+      <span class="k">5</span><span class="well">${FX_ICONS[armed ? armed.id : 'stack']}<span class="bd">${n}</span></span><span class="txt"><span class="nm">${armed ? armed.name : '카드'}</span><span class="ct">${armed ? '+' + armed.delay : n + '장 · 덱 ' + t.deck.length}</span></span></button>`;
+  box.innerHTML = shellBtns + fxBtn;
+  renderFxPop();
 }
-$('#cards').addEventListener('click', e => { const b = e.target.closest('.card'); if (b){ selectCard(b.dataset.shell); b.blur(); } });
+// the hand, shown above the console: each card says what it does and what it adds to the delay
+function renderFxPop(){
+  const pop = $('#fxpop'), t = tanks[cur];
+  const show = fxOpen && t && isHuman(cur) && phase === 'aim' && canControl();
+  pop.hidden = !show;
+  if (!show) return;
+  pop.innerHTML = `<div class="fx-head"><b>카드</b><span>한 차례에 한 장, 이번 발에 얹힙니다 · 덱 ${t.deck.length}장</span></div><div class="fx-list">` +
+    t.hand.map((id, k) => {
+      if (!id) return `<div class="fxcard empty">빈 칸</div>`;
+      const f = FXD[id], on = t.arm === id && t.hand.indexOf(id) === k;
+      return `<button class="fxcard${on ? ' on' : ''}" type="button" data-fx="${k}" aria-pressed="${on}"><span class="well">${FX_ICONS[id]}</span><b>${f.name}</b><span class="d">${f.desc}</span><span class="c">딜레이 +${f.delay}</span><span class="k">${k + 5}</span></button>`;
+    }).join('') + '</div>';
+  const r = $('#cards').getBoundingClientRect(), w = Math.min(460, cw - 24);
+  pop.style.width = w + 'px';
+  pop.style.left = Math.round(clamp(r.left + r.width / 2 - w / 2, 12, cw - w - 12)) + 'px';
+  pop.style.bottom = Math.round(ch - playBot + 8) + 'px';
+}
+function toggleFxPop(force){
+  const t = tanks[cur];
+  const can = t && isHuman(cur) && phase === 'aim' && canControl() && t.hand.some(Boolean);
+  fxOpen = can && (force !== undefined ? force : !fxOpen);
+  Snd.tick(0.4); renderCards();
+}
+function armFx(k){
+  const t = tanks[cur];
+  if (!t || !isHuman(cur) || phase !== 'aim' || !t.hand[k]) return;
+  const id = t.hand[k];
+  t.arm = t.arm === id ? null : id;
+  fxOpen = false; Snd.tick(0.7); renderCards();
+  if (t.arm) toast(`${FXD[id].name} 준비 · 이번 발에 얹습니다`, 1600);
+}
+$('#fxpop').addEventListener('click', e => { const b = e.target.closest('[data-fx]'); if (b) armFx(+b.dataset.fx); });
+$('#cards').addEventListener('click', e => {
+  const b = e.target.closest('.card'); if (!b) return;
+  if (b.id === 'fx-btn') toggleFxPop(); else selectCard(b.dataset.shell);
+  b.blur();
+});
 function selectCard(id){
   const t = tanks[cur];
   if (!t || !isHuman(cur) || phase !== 'aim' || !hasShell(t, id)) return;
@@ -1278,7 +1416,10 @@ function update(rdt){
   for (const tm of timers) tm.at -= dt;
   const due = timers.filter(tm => tm.at <= 0); timers = timers.filter(tm => tm.at > 0); due.forEach(tm => tm.fn());
 
-  if (phase === 'flying' && shells.length === 0){ phase = 'settle'; settleT = 0; Snd.whistleStop(); }
+  if (phase === 'flying' && shells.length === 0){
+    phase = 'settle'; settleT = 0; Snd.whistleStop();
+    if (lastShot && lastShot.fx && !lastShot.fxDone){ lastShot.fxDone = true; toast(`${FXD[lastShot.fx].name}: 포탄이 떨어지지 않아 효과가 없었습니다`, 1800); }
+  }
   if (phase === 'settle'){
     settleT += rdt;
     const calm = tanks.every(t => !t.airborne || t.gone) && timers.length === 0;
@@ -1321,7 +1462,7 @@ function updateControl(dt, rdt){
       const plan = aiJob.plan; aiJob = null;
       aiLog.push(plan); if (aiLog.length > 50) aiLog.shift();
       if (plan.move !== undefined){ aiMoveTo = plan.move; aiMoved = true; aiStuck = 0; phase = 'aiMove'; phaseT = 0; }
-      else { aiPlan = plan; t.sel = plan.sel; t.facing = plan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
+      else { aiPlan = plan; t.sel = plan.sel; t.arm = plan.fx || null; t.facing = plan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
     }
   } else if (phase === 'aiMove'){
     phaseT += rdt;
@@ -1368,6 +1509,16 @@ function moveTank(t, dir, rdt){
 }
 function updateTank(t, dt){
   if (!t || t.gone) return;
+  if (t.hop){
+    const h = t.hop; h.t += dt;
+    const k = Math.min(1, h.t / h.dur);
+    t.x = h.x0 + (h.x1 - h.x0) * k; t.y = h.y0 + (h.y1 - h.y0) * k - h.lift * 4 * k * (1 - k);
+    t.airborne = true; t.tread += (h.x1 - h.x0) * dt / h.dur;
+    if (k >= 1){ t.hop = null; t.x = h.x1; t.y = h.y1; t.airborne = false; t.vy = 0; landing(t, 400); }
+    t.recoil *= Math.exp(-9 * dt); t.hurt *= Math.exp(-4 * dt);
+    t.shownHp += (t.hp - t.shownHp) * Math.min(1, dt * 3);
+    return;
+  }
   let gt = NO_GROUND; for (const ox of [-16, -8, 0, 8, 16]) gt = Math.min(gt, groundY(t.x + ox, t.y - 14));
   if (t.vy < 0 || gt > t.y + 0.5){
     const speed = t.vy;
@@ -1476,7 +1627,7 @@ function updateScenery(rdt){
 // the current tank while aiming, the shell in flight, and it holds still after the blast until the next turn.
 // Dragging on the battlefield or the minimap takes the camera over ("look"); a tap, firing or a new turn gives it back.
 let playTop = 80, playBot = 600;
-let look = null, camSnap = true, dragging = false, camBlast = null;
+let look = null, camSnap = true, dragging = false, camBlast = null, hopCam = null;
 const goal = { x: W / 2, y: H / 2, fy: 0.6 };
 let markers = [];
 function baseScale(){ return Math.min(1.1, cw / VIEW_W, ch / VIEW_H) * S.viewZoom; }
@@ -1504,6 +1655,8 @@ function updateCamera(rdt){
     // when even the widest view cannot hold both, keep the shell at the top and show as much below it as fits
     const viewH = (playBot - playTop) / (baseScale() * tz);
     goal.x = (x0 + x1) / 2; goal.y = (y1 - y0 > viewH) ? y0 + viewH / 2 : (y0 + y1) / 2; goal.fy = 0.5; rate = 6;
+  } else if (phase === 'settle' && hopCam && !hopCam.gone){
+    goal.x = hopCam.x; goal.y = hopCam.y - TANK_CY; goal.fy = 0.58; rate = 7;   // follow a tank an effect card is moving
   } else if (phase === 'settle' && camBlast){
     goal.x = camBlast.x; goal.y = camBlast.y; goal.fy = 0.58;   // after the blast, settle on it
   } else if ((TURN_PHASES.includes(phase) || phase === 'menu') && ct && !ct.gone){
@@ -2064,7 +2217,7 @@ function updateHUD(){
       const o = tanks[1 - i], base = Math.min(tk.delay, o.delay);
       html = '딜레이 ' + (tk.delay - base);
       if (i === cur && TURN_PHASES.includes(phase)){
-        const proj = tk.delay + shotDelay(tk, tk.sel) + Math.floor(turnT) * 10 - base, again = proj < o.delay - base;
+        const proj = tk.delay + shotDelay(tk, tk.sel) + (tk.arm ? FXD[tk.arm].delay : 0) + Math.floor(turnT) * 10 - base, again = proj < o.delay - base;
         html += ` → <em${again ? ' class="go"' : ''}>${proj}${again ? ' 한 번 더' : ''}</em>`;
       }
     }
@@ -2086,7 +2239,7 @@ function updateHUD(){
   setIf('fuel', Math.round(t.fuel) + '/' + t.m.fuel, () => { hud.fuel.style.width = (t.fuel / t.m.fuel * 100) + '%'; });
   const key = [cur, t.m.id, Math.round(t.elev * 2), Math.round((t.tilt || 0) * 200), t.facing, t.lastElev, t.lastFacing, dialC.width].join('|');
   if (key !== dialKey){ dialKey = key; drawDial(t); }
-  setIf('ctl', canControl(), v => { hud.touchBtns.forEach(b => b.disabled = !v); renderCards(); });
+  setIf('ctl', canControl(), v => { hud.touchBtns.forEach(b => b.disabled = !v); if (!v) fxOpen = false; renderCards(); });
 }
 
 /* ---------- banner & toast ---------- */
@@ -2176,7 +2329,7 @@ const PANEL = [
   { title: '규칙', rows: [
     { key: 'turnTime', label: '차례 제한 시간', min: 0, max: 60, step: 5, fmt: v => v ? v + '초' : '없음' },
     { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 차례가 늦음)' },
-    { key: 'handSize', label: '손패 장수(다음 판부터)', min: 1, max: 4, step: 1, fmt: v => v + '장' }
+    { key: 'handSize', label: '카드 손패(다음 판부터)', min: 0, max: 3, step: 1, fmt: v => v ? v + '장' : '없음' }
   ]},
   { title: '화면', rows: [
     { key: 'viewZoom', label: '화면 확대', min: 0.6, max: 1.6, step: 0.05, fmt: v => '×' + v.toFixed(2) }
@@ -2409,6 +2562,8 @@ function start(data){
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
   toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
   setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; },
+  setAmmo: (t, ids) => { t.ammo = { basic: Infinity }; for (const id of ids) t.ammo[id] = (t.ammo[id] || 0) + 1; },
+  standAt, applyFx, toggleFxPop, armFx, FXD,
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 // The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.
