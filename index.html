@@ -56,7 +56,8 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .pinfo{display:grid;gap:5px;min-width:0;flex:1}
 .pname{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:19px;line-height:1}
 .p2 .pname{justify-content:flex-end}
-.pname .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pname .nm{flex:none;white-space:nowrap}
+.pname .nm small{margin-left:5px;font-family:var(--ui);font-size:11px;font-weight:700;color:var(--muted)}
 .turn-tag{font-family:var(--ui);font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;background:var(--brass);color:#1a1408;visibility:hidden;flex:none}
 .plate.active .turn-tag{visibility:visible}
 .hpbar{position:relative;height:15px;min-width:120px;border-radius:5px;background:var(--lcd);border:1.5px solid #000;overflow:hidden}
@@ -84,7 +85,7 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 #timer b{position:relative;font-family:var(--display);font-weight:400;font-size:19px;color:var(--tc,var(--amber));font-variant-numeric:tabular-nums}
 #timer.warn{--tc:#ff5a3c;animation:hot .5s steps(2) infinite}
 #timer.idle{opacity:.5}
-.dly{margin-left:auto;font-family:var(--ui);font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dly{margin-left:auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-family:var(--ui);font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .p2 .dly{margin-left:0;margin-right:auto}
 .dly em{font-style:normal;color:var(--amber)}
 .dly em.go{color:#86e09a}
@@ -171,6 +172,8 @@ body.touch #btn-fire{display:grid}
   #timer{width:38px;height:38px} #timer::before{inset:4px} #timer b{font-size:16px}
   #minimap{height:36px;border-radius:7px}
   .dly{font-size:9.5px}
+  .turn-tag{display:none}   /* the lit plate border already shows whose turn it is */
+  .pname .nm small{font-size:10px;margin-left:4px}
   .power-row .cap{display:none}
 }
 @container (max-width:600px){
@@ -222,6 +225,26 @@ body.touch #btn-fire{display:grid}
 .mode.primary span{color:rgba(26,20,8,.72)}
 .howto{margin:0;font-size:12.5px;line-height:1.7;color:var(--muted)}
 #over-stats{margin:0;font-size:14px;line-height:1.75;color:var(--muted);font-variant-numeric:tabular-nums}
+.p2 .badge svg{transform:scaleX(-1)}
+/* mobile picker */
+.sheet.pick{width:min(860px,100%)}
+.pick-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.pick-head > div{display:grid;gap:6px}
+.pick-head h2{font-size:clamp(30px,5vw,46px)}
+.mobiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.mob{display:grid;gap:6px;align-content:start;min-width:0;text-align:left;padding:10px;border-radius:13px;background:linear-gradient(180deg,var(--steel-3),var(--steel-2));border:2px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 0 rgba(0,0,0,.45)}
+.mob:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.45)}
+.mob.last{border-color:var(--brass);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 2px rgba(226,169,72,.3),0 4px 0 rgba(0,0,0,.45)}
+.mob canvas{display:block;width:100%;height:64px}
+.mob b{font-family:var(--display);font-weight:400;font-size:21px;line-height:1}
+.mob .role{font-size:12px;line-height:1.35;color:var(--muted);min-height:2.7em}
+.mob dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;margin:0;align-items:center;font-size:11.5px}
+.mob dt{font-weight:700;color:var(--brass);white-space:nowrap}
+.mob dd{margin:0;display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mob .bar{flex:1;min-width:20px;height:6px;border-radius:3px;background:var(--lcd);border:1px solid #000;overflow:hidden}
+.mob .bar i{display:block;height:100%;background:linear-gradient(90deg,#f3c46a,var(--amber))}
+@media (max-width:620px){ .mobiles{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-height:460px){ .sheet.pick{padding:12px 14px;gap:8px} .pick-head h2{font-size:26px} .mob{padding:7px 8px;gap:4px} .mob canvas{height:42px} .mob b{font-size:16px} .mob .role{display:none} .mob dl{font-size:10.5px;gap:2px 6px} }
 @media (max-height:460px){ .sheet{padding:16px;gap:10px} .brand svg{width:44px;height:44px} .title{font-size:50px} .lede{font-size:13px} .mode{padding:8px 12px} .mode b{font-size:17px} .modes:not(.row){grid-template-columns:repeat(3,1fr)} .howto{display:none} }
 
 /* ---------- tuning panel ---------- */
@@ -271,7 +294,7 @@ body.touch #btn-fire{display:grid}
     </div>
   </div>
   <div class="plate p2 steel" id="hp1">
-    <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true" style="transform:scaleX(-1)"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
+    <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
     <div class="pinfo">
       <div class="pname"><span class="dly"></span><span class="turn-tag">차례</span><span class="nm">컴퓨터</span></div>
       <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
@@ -310,7 +333,7 @@ body.touch #btn-fire{display:grid}
     <div id="cards" role="toolbar" aria-label="포탄 고르기"></div>
   </div>
   <div class="c-fire">
-    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~5 포탄 · P 넘기기 · T 조율판</small></div>
+    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 · P 넘기기 · T 조율판</small></div>
     <div class="tpad angpad">
       <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
       <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
@@ -337,7 +360,17 @@ body.touch #btn-fire{display:grid}
       <button class="mode" type="button" data-mode="duo"><b>둘이서 번갈아</b><span>한 기기로 1P와 2P</span></button>
       <button class="mode" type="button" data-mode="practice"><b>과녁 연습</b><span>상대가 쏘지 않아 손맛 조율에 좋음</span></button>
     </div>
-    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~5 포탄. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
+    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~4 포탄. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
+  </div>
+</section>
+
+<section id="pick" class="overlay" hidden>
+  <div class="sheet pick">
+    <div class="pick-head">
+      <div><p class="eyebrow" id="pick-eyebrow">컴퓨터와 대결</p><h2 id="pick-title">기체 고르기</h2></div>
+      <button class="chip" type="button" id="pick-back">뒤로</button>
+    </div>
+    <div class="mobiles" id="mobiles"></div>
   </div>
 </section>
 
@@ -420,15 +453,37 @@ const ICONS = {
   heavy: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor"/><circle cx="9" cy="9" r="2.4" fill="#0a0e0a" opacity=".45"/></svg>',
   split: '<svg viewBox="0 0 24 24"><circle cx="5" cy="15" r="3.4" fill="currentColor"/><circle cx="12" cy="8" r="3.4" fill="currentColor"/><circle cx="19" cy="15" r="3.4" fill="currentColor"/></svg>',
   drill: '<svg viewBox="0 0 24 24"><path d="M6 4h12l-6 17z" fill="currentColor"/><path d="M8 9h8M9.5 13h5" stroke="#0a0e0a" stroke-width="1.6" opacity=".55"/></svg>',
-  calm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/><path d="M2 6h6M2 18h6M16 6h6M16 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M4 21L20 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+  calm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/><path d="M2 6h6M2 18h6M16 6h6M16 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M4 21L20 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  pierce: '<svg viewBox="0 0 24 24"><path d="M3 12l7-5h9l3 5-3 5h-9z" fill="currentColor"/><path d="M10 7v10" stroke="#0a0e0a" stroke-width="1.6" opacity=".55"/></svg>',
+  bounce: '<svg viewBox="0 0 24 24"><path d="M2 20h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/><path d="M3 6q4 14 8 14t8-10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2 3" stroke-linecap="round" opacity=".7"/><circle cx="19" cy="9" r="4" fill="currentColor"/></svg>'
 };
 const SHELLS = [
   { id: 'basic', name: '기본탄', uses: Infinity, r: 38, dmg: 32, gMul: 1, vMul: 1, windMul: 1, delay: 780, desc: '무제한' },
   { id: 'heavy', name: '대형탄', uses: 2, r: 62, dmg: 46, gMul: 1.18, vMul: 0.96, windMul: 0.8, delay: 1450, desc: '폭발 범위가 넓고 바람을 덜 탐' },
   { id: 'split', name: '분열탄', uses: 2, r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1, split: true, delay: 1150, desc: '꼭대기에서 셋으로 갈라짐' },
   { id: 'drill', name: '굴착탄', uses: 2, r: 34, dmg: 30, gMul: 1, vMul: 1, windMul: 1, drill: true, delay: 940, desc: '땅을 파고든 뒤 터짐' },
-  { id: 'calm', name: '무풍탄', uses: 2, r: 30, dmg: 26, gMul: 1, vMul: 1, windMul: 0, delay: 880, desc: '바람을 받지 않음' }
+  { id: 'calm', name: '무풍탄', uses: 2, r: 30, dmg: 26, gMul: 1, vMul: 1, windMul: 0, delay: 880, desc: '바람을 받지 않음' },
+  // the two below are mobile-only shells; split and drill above are mobile-only too (see MOBILES)
+  { id: 'pierce', name: '철갑탄', uses: 2, r: 26, dmg: 24, directMul: 2.4, gMul: 1, vMul: 1.05, windMul: 0.7, delay: 1000, desc: '빠르고 직격하면 피해 ×2.4' },
+  { id: 'bounce', name: '도약탄', uses: 2, r: 34, dmg: 30, gMul: 1, vMul: 1, windMul: 1, bounce: true, delay: 900, desc: '땅에 한 번 튕긴 뒤 터짐' }
 ];
+// Mobiles (our own values, not taken from GunBound). Each has the three shared shells plus one of its own.
+// ang is the barrel range measured from the hull; climb is the highest step (px) it can drive up.
+const MOBILES = [
+  { id: 'light', name: '경전차', desc: '빠르고 멀리 움직임. 체력이 낮음', hp: 85, fuel: 180, speed: 1.25, climb: 14, ang: [0, 80], shells: ['basic', 'heavy', 'calm', 'bounce'] },
+  { id: 'armored', name: '중전차', desc: '단단하지만 느리고 높이 못 쏨', hp: 130, fuel: 80, speed: 0.8, climb: 9, ang: [0, 55], shells: ['basic', 'heavy', 'calm', 'pierce'] },
+  { id: 'howitzer', name: '곡사포', desc: '높게만 쏨. 언덕 너머를 노림', hp: 95, fuel: 110, speed: 1, climb: 11, ang: [40, 90], shells: ['basic', 'heavy', 'calm', 'split'] },
+  { id: 'digger', name: '굴착차', desc: '비탈을 잘 오르고 땅을 파고듦', hp: 105, fuel: 130, speed: 1, climb: 18, ang: [15, 75], shells: ['basic', 'heavy', 'calm', 'drill'] }
+];
+const MOBILE = Object.fromEntries(MOBILES.map(m => [m.id, m]));
+const DEFAULT_PICKS = ['digger', 'digger'];   // used when a game starts without a choice (tests, the idle scene picks its own)
+// white silhouettes for the player plates, facing right (the right-hand plate mirrors them)
+const MOBILE_ICONS = {
+  light: '<svg viewBox="0 0 32 22" aria-hidden="true"><path d="M4 15h24l-4-5h-6l-1-2h-5l-1 2H7z" fill="#fff"/><path d="M15 8l15-5" stroke="#fff" stroke-width="2" stroke-linecap="round"/><rect x="3" y="15" width="26" height="5" rx="2.5" fill="#0b0f0c" opacity=".55"/></svg>',
+  armored: '<svg viewBox="0 0 32 22" aria-hidden="true"><path d="M2 15h28l-2-8h-7l-1-3h-9l-1 3H4z" fill="#fff"/><path d="M16 5l10-3" stroke="#fff" stroke-width="4" stroke-linecap="round"/><rect x="1" y="15" width="30" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg>',
+  howitzer: '<svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-5H6z" fill="#fff"/><rect x="11" y="7" width="9" height="4" rx="1" fill="#fff"/><path d="M16 8l6-7" stroke="#fff" stroke-width="5" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg>',
+  digger: '<svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h21l-3-6h-5l-1-2h-5l-1 2H6z" fill="#fff"/><path d="M24 8l7 4-7 4z" fill="#fff"/><path d="M14 7l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="24" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg>'
+};
 // Turn order follows GunBound's delay rule: each action adds delay, every second of thinking adds 10,
 // and whoever has the lower total moves next. Skipping costs less than shooting.
 const PASS_DELAY = 500;
@@ -437,7 +492,8 @@ const SHELL = Object.fromEntries(SHELLS.map(s => [s.id, s]));
 SHELL.child = { id: 'child', r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1 };
 
 /* ---------- canvas & view ---------- */
-const cvs = $('#game'), ctx = cvs.getContext('2d');
+const cvs = $('#game'), gameCtx = cvs.getContext('2d');
+let ctx = gameCtx;   // drawing functions use ctx; the mobile previews point it at their own canvas for a moment
 let cw = 0, ch = 0, dpr = 1, hudTopBottom = 80;
 let portraitOk = false;
 function resize(){
@@ -661,27 +717,32 @@ const COLORS = [
   { main: '#ff5b49', dark: '#a92a1f', light: '#ffb0a4', ink: '#5a120b' }
 ];
 
-function makeTank(i, x){
-  const cards = {}; SHELLS.forEach(s => cards[s.id] = s.uses);
-  return { i, x, y: 0, vy: 0, hp: 100, shownHp: 100, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: 45,
-    fuel: 120, cards, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+function makeTank(i, x, mid){
+  const m = MOBILE[mid] || MOBILE[DEFAULT_PICKS[i]];
+  const cards = {}; m.shells.forEach(id => cards[id] = SHELL[id].uses);
+  return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
+    fuel: m.fuel, cards, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
+function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
+function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
 function isHuman(i){ return mode !== 'ai' || i === 0; }
 function shooterCanAct(){ return mode !== 'practice' || cur === 0; }
 
-function startGame(m){
+let gamePicks = DEFAULT_PICKS.slice();
+function startGame(m, picks){
   mode = m;
+  gamePicks = (picks || DEFAULT_PICKS).slice();
   armBackTrap();
   const sx = pickSpawns();
   genTerrain(sx); genScenery();
-  tanks = [makeTank(0, sx[0]), makeTank(1, sx[1])];
+  tanks = [makeTank(0, sx[0], gamePicks[0]), makeTank(1, sx[1], gamePicks[1])];
   tanks.forEach(t => { t.y = groundY(t.x, 0); });
   shells = []; parts = []; texts = []; rings = []; timers = [];
   stats[0] = mkStats(); stats[1] = mkStats();
   cur = 0; wind = 0; turnCount = 0; hitStop = 0; trauma = 0; timeScale = 1;
   clearLook(); camSnap = true; cam.z = 1;
-  $('#hp0 .nm').textContent = NAMES[m][0]; $('#hp1 .nm').textContent = NAMES[m][1];
-  $('#start').hidden = true; $('#over').hidden = true;
+  setBadges();
+  $('#start').hidden = true; $('#over').hidden = true; $('#pick').hidden = true;
   beginTurn();
 }
 function timed(){ return S.turnTime > 0 && mode !== 'practice'; }
@@ -692,7 +753,7 @@ function beginTurn(again){
   const prev = wind / Math.max(1, S.windMax);
   wind = clamp(prev * 0.35 + rand(-1, 1) * 0.85, -1, 1) * S.windMax;
   const t = tanks[cur];
-  t.fuel = 120;
+  t.fuel = t.m.fuel;
   if (!(t.cards[t.sel] > 0)) t.sel = 'basic';
   power = 0; powerDir = 1;
   phaseT = 0;
@@ -706,7 +767,7 @@ function beginTurn(again){
   Snd.tick(0.5);
 }
 function respawn(t){
-  t.alive = true; t.gone = false; t.hp = 100; t.shownHp = 100; t.vy = 0; t.airborne = false;
+  t.alive = true; t.gone = false; t.hp = t.maxHp; t.shownHp = t.maxHp; t.vy = 0; t.airborne = false;
   let x = clamp(t.x, 30, W - 30);
   if (groundY(x, 0) >= H - 30){
     outer: for (let k = 1; k < W; k += 2) for (const s of [-1, 1]){
@@ -755,8 +816,8 @@ function gameOver(){
   }
   $('#over-title').textContent = title;
   $('#over-eyebrow').textContent = eyebrow;
-  const line = (n, s) => `${n}: ${s.shots}발 중 ${s.hits}발 명중, 직격 ${s.direct}번, 한 발 최대 피해 ${s.best}`;
-  $('#over-stats').innerHTML = mode === 'ai' ? line('나', stats[0]) : line('1P', stats[0]) + '<br>' + line('2P', stats[1]);
+  const line = (n, i) => { const s = stats[i]; return `${n}(${tanks[i].m.name}): ${s.shots}발 중 ${s.hits}발 명중, 직격 ${s.direct}번, 한 발 최대 피해 ${s.best}`; };
+  $('#over-stats').innerHTML = mode === 'ai' ? line('나', 0) : line('1P', 0) + '<br>' + line('2P', 1);
   clearTimeout(overTimer);
   overTimer = setTimeout(() => { if (phase === 'over') $('#over').hidden = false; }, 900);
 }
@@ -774,7 +835,7 @@ function fire(t, p){
   const pv = pivot(t), dir = aimDir(t, t.facing, t.elev);
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
   const shot = { owner: t, hit: false, direct: false };
-  shells.push({ x: pv.x + dir.x * MUZZLE, y: pv.y + dir.y * MUZZLE, vx: dir.x * v, vy: dir.y * v, type: t.sel, owner: t, shot, age: 0, trail: [], dead: false, drilling: false, drillLeft: 0, carveAcc: 0, splitDone: false });
+  shells.push({ x: pv.x + dir.x * MUZZLE, y: pv.y + dir.y * MUZZLE, vx: dir.x * v, vy: dir.y * v, type: t.sel, owner: t, shot, age: 0, trail: [], dead: false, drilling: false, drillLeft: 0, carveAcc: 0, splitDone: false, bounced: false, bounceT: 0 });
   t.lastPower = p; t.lastElev = t.elev; t.lastFacing = t.facing;
   stats[t.i].shots++;
   if (!(t.cards[t.sel] > 0)) t.sel = 'basic';
@@ -806,7 +867,7 @@ function explode(x, y, def, direct, owner, shot){
     if (!t.alive) continue;
     const cx = t.x, cy = t.y - TANK_CY, d = Math.hypot(cx - x, cy - y);
     let dmg = 0;
-    if (t === direct) dmg = Math.round(def.dmg * 1.25);
+    if (t === direct) dmg = Math.round(def.dmg * (def.directMul || 1.25));
     else if (d < def.r + TANK_R) dmg = Math.round(def.dmg * clamp(1 - (d - 10) / (def.r + TANK_R), 0, 1));
     if (dmg <= 0) continue;
     anyHit = true;
@@ -861,23 +922,50 @@ function spawnBlast(x, y, big, direct){
   if (parts.length > 700) parts.splice(0, parts.length - 700);
 }
 
+/* ---------- bouncing shell ---------- */
+// The bounce shell reflects off the ground once (keeping BOUNCE_KEEP of its speed) and then bursts on the next
+// contact, or BOUNCE_FUSE seconds after the bounce. simulate() below uses the same rule so the computer can aim it.
+const BOUNCE_KEEP = 0.62, BOUNCE_FUSE = 1.6;
+function surfaceNormal(x, y){
+  let nx = 0, ny = 0;
+  for (let dy = -6; dy <= 6; dy += 2) for (let dx = -6; dx <= 6; dx += 2) if (isSolid(x + dx, y + dy)){ nx -= dx; ny -= dy; }
+  const l = Math.hypot(nx, ny);
+  return l ? { x: nx / l, y: ny / l } : { x: 0, y: -1 };
+}
+// b holds x, y, vx, vy; h is the step that just moved it into the ground
+function bounceOff(b, h){
+  const n = surfaceNormal(b.x, b.y);
+  b.x -= b.vx * h; b.y -= b.vy * h;
+  const dot = b.vx * n.x + b.vy * n.y;
+  if (dot < 0){ b.vx -= 2 * dot * n.x; b.vy -= 2 * dot * n.y; }
+  b.vx *= BOUNCE_KEEP; b.vy *= BOUNCE_KEEP;
+  b.x += n.x * 2; b.y += n.y * 2;
+}
+
 /* ---------- computer opponent ---------- */
 function simulate(t, facing, rel, p, def, target){
   const pv = pivot(t), dir = aimDir(t, facing, rel);
   let x = pv.x + dir.x * MUZZLE, y = pv.y + dir.y * MUZZLE;
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
   let vx = dir.x * v, vy = dir.y * v;
-  const h = 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
-  let drilling = false, left = 150;
+  // a bounce depends on exactly where the shell meets the ground, so that shell is stepped like the real one (1/240 s)
+  const h = def.bounce ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
+  let drilling = false, left = 150, bounced = false, fuse = 0;
+  const b = { x: 0, y: 0, vx: 0, vy: 0 };
   const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90) d += 600; return d; };
-  for (let i = 0; i < 1500; i++){
+  for (let i = 0, n = Math.ceil(12.5 / h); i < n; i++){
     if (drilling){ vy += S.gravity * 0.35 * h; x += vx * h; y += vy * h; left -= Math.hypot(vx, vy) * h; }
     else { vx += wa * h; vy += g * h; x += vx * h; y += vy * h; }
     if ((x - tx) * (x - tx) + (y - ty) * (y - ty) < TANK_R * TANK_R) return 0;
     if (x < -400 || x > W + 400 || y > H + 60) return 1e9;
     if (drilling){ if (left <= 0) return score(x, y); continue; }
-    if (i > 8 && isSolid(x, y)){
+    if (bounced && (fuse += h) > BOUNCE_FUSE) return score(x, y);
+    if (i * h > 0.07 && isSolid(x, y)){
       if (def.drill){ drilling = true; vx *= 0.5; vy *= 0.5; continue; }
+      if (def.bounce && !bounced){
+        b.x = x; b.y = y; b.vx = vx; b.vy = vy; bounceOff(b, h);
+        x = b.x; y = b.y; vx = b.vx; vy = b.vy; bounced = true; continue;
+      }
       return score(x, y);
     }
   }
@@ -885,19 +973,20 @@ function simulate(t, facing, rel, p, def, target){
 }
 function planShot(t){
   const target = tanks[1 - t.i];
-  const avail = SHELLS.filter(s => s.id !== 'basic' && t.cards[s.id] > 0);
-  t.sel = (avail.length && Math.random() < 0.45) ? avail[(Math.random() * avail.length) | 0].id : 'basic';
+  const avail = Object.keys(t.cards).filter(id => id !== 'basic' && t.cards[id] > 0);
+  t.sel = (avail.length && Math.random() < 0.45) ? avail[(Math.random() * avail.length) | 0] : 'basic';
   const def = SHELL[t.sel];
   const facing = target.x >= t.x ? 1 : -1;
-  let best = { d: Infinity, e: 45, p: 70 };
-  for (let e = 6; e <= 88; e += 2){
+  const [lo, hi] = t.m.ang;
+  let best = { d: Infinity, e: clampElev(t, 45), p: 70 };
+  for (let e = Math.max(lo, 4); e <= hi; e += 2){
     for (let p = 22; p <= 100; p += 1.5){
       const d = simulate(t, facing, e, p, def, target);
       if (d < best.d) best = { d, e, p };
     }
   }
   const err = 1 - S.aiSkill;
-  return { facing, elev: clamp(Math.round(best.e + randn() * err * 4), 0, 90), power: clamp(best.p + randn() * err * 9, 5, 100) };
+  return { facing, elev: clampElev(t, Math.round(best.e + randn() * err * 4)), power: clamp(best.p + randn() * err * 9, 5, 100) };
 }
 
 /* ---------- input ---------- */
@@ -914,7 +1003,9 @@ function releaseFire(){
 }
 function nudge(dir){
   if (!canControl()) return;
-  const t = tanks[cur]; t.elev = clamp(Math.round(t.elev) + dir, 0, 90); Snd.tick(0.25);
+  const t = tanks[cur], e = clampElev(t, Math.round(t.elev) + dir);
+  if (e === t.elev){ Snd.tick(0.1); return; }
+  t.elev = e; Snd.tick(0.25);
 }
 function setHold(k, on){
   if ((k === 'up' || k === 'down') && on && !held[k]){ nudge(k === 'up' ? 1 : -1); holdT[k] = 0; }
@@ -935,7 +1026,7 @@ window.addEventListener('keydown', e => {
     case 'KeyT': togglePanel(); break;
     case 'KeyP': passTurn(false); break;
     default:
-      if (/^Digit[1-5]$/.test(e.code)) selectCard(SHELLS[+e.code.slice(5) - 1].id);
+      if (/^Digit[1-9]$/.test(e.code) && tanks[cur]){ const id = tanks[cur].m.shells[+e.code.slice(5) - 1]; if (id) selectCard(id); }
   }
 });
 window.addEventListener('keyup', e => {
@@ -972,7 +1063,7 @@ function setTouch(on){ document.body.classList.toggle('touch', on); checkRotate(
 function renderCards(){
   const t = tanks[cur]; const box = $('#cards');
   if (!t){ box.innerHTML = ''; return; }
-  box.innerHTML = SHELLS.map((s, i) => {
+  box.innerHTML = t.m.shells.map(id => SHELL[id]).map((s, i) => {
     const left = t.cards[s.id], none = !(left > 0);
     const dis = none || !canControl();
     return `<button class="card${t.sel === s.id ? ' sel' : ''}" type="button" data-shell="${s.id}" ${dis ? 'disabled' : ''} aria-pressed="${t.sel === s.id}" aria-label="${s.name}, ${left === Infinity ? '무제한' : left + '발 남음'}, 딜레이 ${s.delay}">
@@ -1043,7 +1134,7 @@ function updateControl(dt, rdt){
     const dir = held.left ? -1 : held.right ? 1 : 0;
     if (dir && phase === 'aim'){ if (look && !dragging) look = null; moveTank(t, dir, rdt); } else Snd.rumble(false);
     for (const k of ['up', 'down']){
-      if (held[k]){ holdT[k] += rdt; if (holdT[k] > 0.22) t.elev = clamp(t.elev + (k === 'up' ? 1 : -1) * 32 * rdt, 0, 90); }
+      if (held[k]){ holdT[k] += rdt; if (holdT[k] > 0.22) t.elev = clampElev(t, t.elev + (k === 'up' ? 1 : -1) * 32 * rdt); }
     }
     if (phase === 'charging') chargeStep(rdt);
   } else Snd.rumble(false);
@@ -1075,12 +1166,13 @@ function chargeStep(rdt){
 function moveTank(t, dir, rdt){
   t.facing = dir;
   if (t.fuel <= 0 || t.airborne){ Snd.rumble(false); return; }
-  const step = dir * S.moveSpeed * rdt;
+  const step = dir * S.moveSpeed * t.m.speed * rdt;
   const nx = clamp(t.x + step, 26, W - 26);
   const o = tanks[1 - t.i];
   if (o && o.alive && !o.gone && Math.sign(o.x - t.x) === dir && Math.abs(o.x - nx) < 56 && Math.abs(o.y - t.y) < 44){ Snd.rumble(false); return; }
-  let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, t.y - 16));
-  if (gt < t.y - 12){ Snd.rumble(false); return; }
+  // the highest ground just ahead may be at most t.m.climb above the tracks
+  let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, t.y - t.m.climb - 4));
+  if (gt < t.y - t.m.climb){ Snd.rumble(false); return; }
   t.x = nx; t.fuel = Math.max(0, t.fuel - Math.abs(step)); t.tread += step;
   if (gt < t.y) t.y = gt;
   Snd.rumble(true);
@@ -1147,7 +1239,14 @@ function updateShells(dt){
       if (hitT){ s.dead = true; explode(s.x, s.y, def, hitT, s.owner, s.shot); continue; }
       if (s.x < -400 || s.x > W + 400 || s.y > H + 60){ s.dead = true; continue; }
       if (s.drilling){ if (s.drillLeft <= 0){ s.dead = true; explode(s.x, s.y, def, null, s.owner, s.shot); } continue; }
+      if (s.bounced && (s.bounceT += h) > BOUNCE_FUSE){ s.dead = true; explode(s.x, s.y, def, null, s.owner, s.shot); continue; }
       if (isSolid(s.x, s.y)){
+        if (def.bounce && !s.bounced){
+          bounceOff(s, h); s.bounced = true;
+          if (J('particles')) for (let n = 0; n < 8; n++) parts.push({ x: s.x, y: s.y, vx: rand(-90, 90), vy: rand(-160, -40), life: 0.5, max: 0.5, size: rand(2, 4), kind: 'dirt', g: 900, color: DIRT[(Math.random() * DIRT.length) | 0] });
+          Snd.thud(); Snd.pop(); buzz(15);
+          continue;
+        }
         if (def.drill){ s.drilling = true; s.drillLeft = 150; s.vx *= 0.5; s.vy *= 0.5; Snd.grind(true); addTrauma(0.06); }
         else { s.dead = true; explode(s.x, s.y, def, null, s.owner, s.shot); }
       }
@@ -1541,11 +1640,19 @@ mm.addEventListener('pointermove', e => { if (mmPointer === e.pointerId) minimap
 const mmUp = e => { if (mmPointer === e.pointerId) mmPointer = null; };
 mm.addEventListener('pointerup', mmUp); mm.addEventListener('pointercancel', mmUp); mm.addEventListener('lostpointercapture', mmUp);
 
-function drawTank(t){
+// Each mobile's look, in hull space with the front to the right (mirrored when facing left).
+// track: [left x, width, height]; hull: upper hull outline; dome: turret radius (0 = gun cradle); barrel: [width, length]
+const LOOKS = {
+  light:    { track: [-26, 52, 12], hull: [[-25, -12], [25, -12], [18, -22], [-16, -22]], dome: 10, barrel: [5, 38], extra: 'spoiler' },
+  armored:  { track: [-31, 62, 15], hull: [[-29, -14], [29, -14], [25, -29], [-24, -29]], dome: 14, barrel: [9, 32], extra: 'skirt' },
+  howitzer: { track: [-29, 58, 14], hull: [[-27, -13], [27, -13], [23, -22], [-23, -22]], dome: 0, barrel: [12, 30], extra: 'spade' },
+  digger:   { track: [-27, 52, 14], hull: [[-26, -13], [21, -13], [16, -25], [-20, -25]], dome: 11, barrel: [6, 32], extra: 'drill' }
+};
+function drawTank(t, bare){
   if (t.gone) return;
-  const c = COLORS[t.i];
+  const c = COLORS[t.i], L = LOOKS[t.m.id];
   let ox = 0, oy = 0;
-  if (t.alive && phase === 'charging' && t.i === cur && J('recoil')){ const k = power / 100 * 1.4 * S.recoil; ox = rand(-k, k); oy = rand(-k, k) * 0.6; }
+  if (!bare && t.alive && phase === 'charging' && t.i === cur && J('recoil')){ const k = power / 100 * 1.4 * S.recoil; ox = rand(-k, k); oy = rand(-k, k) * 0.6; }
   const rk = J('recoil') ? t.recoil * S.recoil : 0;
   const d = aimDir(t, t.facing, t.elev);
   ox -= d.x * rk * 5; oy -= d.y * rk * 3;
@@ -1555,19 +1662,20 @@ function drawTank(t){
   const main = dead ? '#3c3538' : hurt ? '#ffffff' : c.main;
   const dark = dead ? '#2a2427' : hurt ? '#ffffff' : c.dark;
   const light = dead ? '#4a4246' : hurt ? '#ffffff' : c.light;
+  const [tx0, tw, th] = L.track, hull = L.hull, hullTop = hull[2][1];
   // ground shadow
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(t.x, t.y + 1, 30, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(t.x, t.y + 1, tw / 2 + 2, 4.5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save(); ctx.translate(ox, oy);
   // antenna flag, blowing with the wind
+  const ax = -15 * t.facing, ay = hullTop + 1, tipY = ay - 22;
   ctx.save();
   ctx.translate(t.x, t.y); ctx.rotate(t.tilt);
-  const ax = -15 * t.facing, ay = -25, tipY = ay - 22;
   ctx.strokeStyle = '#1a1820'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax, tipY); ctx.stroke();
   ctx.restore();
   {
     const a = t.tilt, cosA = Math.cos(a), sinA = Math.sin(a);
-    const fx = t.x + (-15 * t.facing) * cosA - (-47) * sinA, fy = t.y + (-15 * t.facing) * sinA + (-47) * cosA;
+    const fx = t.x + ax * cosA - tipY * sinA, fy = t.y + ax * sinA + tipY * cosA;
     const dir = Math.abs(wind) < 4 ? 0 : Math.sign(wind), len = 10 + Math.min(14, Math.abs(wind) * 0.12);
     const time = performance.now() / 120;
     ctx.fillStyle = dead ? '#555' : c.main; ctx.strokeStyle = '#1a1820'; ctx.lineWidth = 1.5;
@@ -1580,45 +1688,66 @@ function drawTank(t){
     }
     ctx.closePath(); ctx.fill(); ctx.stroke();
   }
-  // hull and tracks follow the slope
+  // hull and tracks follow the slope; the hull's front points where the gun faces
   ctx.save();
   ctx.translate(t.x, t.y); ctx.rotate(t.tilt);
   ctx.lineJoin = 'round';
   ctx.fillStyle = '#25232d'; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2.5;
-  rr(-29, -14, 58, 14, 7); ctx.fill(); ctx.stroke();
+  rr(tx0, -th, tw, th, th / 2); ctx.fill(); ctx.stroke();
   const off = ((t.tread % 6) + 6) % 6;
   ctx.fillStyle = '#4b4757';
-  for (let k = -27 + off; k < 27; k += 6) ctx.fillRect(k, -13.5, 2.5, 2);
-  for (let k = -20; k <= 20; k += 10){ ctx.fillStyle = '#56525f'; ctx.beginPath(); ctx.arc(k, -6.5, 4.2, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#9894a3'; ctx.beginPath(); ctx.arc(k, -6.5, 1.5, 0, Math.PI * 2); ctx.fill(); }
+  for (let k = tx0 + 2 + off; k < tx0 + tw - 2; k += 6) ctx.fillRect(k, -th + 0.5, 2.5, 2);
+  for (let k = tx0 + 9; k <= tx0 + tw - 7.99; k += (tw - 17) / Math.max(1, Math.round((tw - 17) / 10))){
+    ctx.fillStyle = '#56525f'; ctx.beginPath(); ctx.arc(k, -th / 2, th * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#9894a3'; ctx.beginPath(); ctx.arc(k, -th / 2, 1.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.scale(t.facing, 1);
+  if (L.extra === 'skirt'){ ctx.fillStyle = dark; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2; rr(tx0 + 3, -th + 1, tw - 6, 7, 3); ctx.fill(); ctx.stroke(); }
+  if (L.extra === 'spade'){ ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-24, -10); ctx.lineTo(-37, -1); ctx.stroke(); ctx.strokeStyle = dark; ctx.lineWidth = 3; ctx.stroke(); }
+  if (L.extra === 'drill'){
+    ctx.fillStyle = dead ? '#555' : '#d3cdb8'; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(19, -21); ctx.lineTo(37, -12.5); ctx.lineTo(19, -4); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(11,15,12,.55)'; ctx.lineWidth = 1.5;
+    const sp = (((t.tread * 0.8) % 6) + 6) % 6;
+    for (let k = 21 + sp; k < 34; k += 6){ const hh = 8.5 * (1 - (k - 19) / 18); ctx.beginPath(); ctx.moveTo(k, -12.5 - hh); ctx.lineTo(k + 2, -12.5 + hh); ctx.stroke(); }
+  }
   ctx.fillStyle = main; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2.6;
-  ctx.beginPath(); ctx.moveTo(-27, -13); ctx.lineTo(27, -13); ctx.lineTo(22, -26); ctx.lineTo(-18, -26); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = light; ctx.globalAlpha = dead ? 0.5 : 0.85; ctx.fillRect(-16, -24.5, 36, 3.2); ctx.globalAlpha = 1;
-  ctx.fillStyle = dark; ctx.fillRect(-25, -17, 50, 3);
+  ctx.beginPath(); ctx.moveTo(hull[0][0], hull[0][1]); for (let k = 1; k < hull.length; k++) ctx.lineTo(hull[k][0], hull[k][1]); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = light; ctx.globalAlpha = dead ? 0.5 : 0.85; ctx.fillRect(hull[3][0] + 2, hullTop + 1.5, hull[2][0] - hull[3][0] - 4, 3.2); ctx.globalAlpha = 1;
+  ctx.fillStyle = dark; ctx.fillRect(hull[0][0] + 2, hull[0][1] - 4, hull[1][0] - hull[0][0] - 4, 3);
+  if (L.extra === 'spoiler'){ ctx.fillStyle = dark; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-14, hullTop); ctx.lineTo(-25, hullTop - 6); ctx.lineTo(-21, hullTop); ctx.closePath(); ctx.fill(); ctx.stroke(); }
   ctx.restore();
   // barrel in world angle from the real launch point
-  const blen = 34 - rk * 10;
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 10;
+  const [bw, bl] = L.barrel, blen = bl - rk * 10;
+  ctx.lineCap = L.dome ? 'round' : 'butt';
+  ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = bw + 4;
   ctx.beginPath(); ctx.moveTo(pv.x, pv.y); ctx.lineTo(pv.x + d.x * blen, pv.y + d.y * blen); ctx.stroke();
-  ctx.strokeStyle = dead ? '#3a3336' : '#3a3744'; ctx.lineWidth = 6;
+  ctx.strokeStyle = dead ? '#3a3336' : '#3a3744'; ctx.lineWidth = bw;
   ctx.beginPath(); ctx.moveTo(pv.x, pv.y); ctx.lineTo(pv.x + d.x * blen, pv.y + d.y * blen); ctx.stroke();
-  ctx.strokeStyle = light; ctx.lineWidth = 2; ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = light; ctx.lineWidth = Math.max(1.5, bw / 3); ctx.globalAlpha = 0.8;
   ctx.beginPath(); ctx.moveTo(pv.x + d.x * 4, pv.y + d.y * 4 - 1); ctx.lineTo(pv.x + d.x * (blen - 3), pv.y + d.y * (blen - 3) - 1); ctx.stroke(); ctx.globalAlpha = 1;
-  ctx.fillStyle = '#0b0f0c'; ctx.beginPath(); ctx.arc(pv.x + d.x * blen, pv.y + d.y * blen, 5.5, 0, Math.PI * 2); ctx.fill();
-  // turret dome on the tilted hull
+  ctx.fillStyle = '#0b0f0c'; ctx.beginPath(); ctx.arc(pv.x + d.x * blen, pv.y + d.y * blen, bw / 2 + 2.5, 0, Math.PI * 2); ctx.fill();
+  ctx.lineCap = 'round';
+  // turret on the tilted hull: a dome, or a gun cradle for the howitzer
   ctx.save();
   ctx.translate(pv.x, pv.y); ctx.rotate(t.tilt);
   ctx.fillStyle = dark; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2.6;
-  ctx.beginPath(); ctx.arc(0, 1, 12, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = light; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(-3, -4, 3.2, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  if (L.dome){
+    ctx.beginPath(); ctx.arc(0, 1, L.dome, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = light; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(-L.dome / 4, -L.dome / 3, L.dome / 3.7, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+  } else {
+    rr(-11, -5, 22, 10, 3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = light; ctx.globalAlpha = 0.7; ctx.fillRect(-8, -3, 16, 2.5); ctx.globalAlpha = 1;
+  }
   ctx.restore();
   ctx.restore();
+  if (bare) return;
   // hp bar above
   if (t.alive){
     const w = 52, x = t.x - w / 2, y = t.y - 70;
     ctx.fillStyle = '#0b0f0c'; rr(x - 2, y - 2, w + 4, 10, 4); ctx.fill();
-    ctx.fillStyle = 'rgba(255,241,194,.85)'; rr(x, y, w * clamp(t.shownHp / 100, 0, 1), 6, 3); ctx.fill();
-    ctx.fillStyle = c.main; rr(x, y, w * clamp(t.hp / 100, 0, 1), 6, 3); ctx.fill();
+    ctx.fillStyle = 'rgba(255,241,194,.85)'; rr(x, y, w * clamp(t.shownHp / t.maxHp, 0, 1), 6, 3); ctx.fill();
+    ctx.fillStyle = c.main; rr(x, y, w * clamp(t.hp / t.maxHp, 0, 1), 6, 3); ctx.fill();
   } else if (Math.random() < 0.25 && J('particles')){
     parts.push({ x: t.x + rand(-8, 8), y: t.y - 22, vx: rand(-10, 10), vy: rand(-50, -25), life: 1.4, max: 1.4, size: rand(6, 11), kind: 'smoke', g: -10 });
   }
@@ -1650,6 +1779,13 @@ function drawDial(t){
   for (let A = 0; A <= 180; A += 10){
     const [x1, y1] = pt(A, R), [x2, y2] = pt(A, R - (A % 30 === 0 ? 7 : 4) * k);
     dctx.beginPath(); dctx.moveTo(x1, y1); dctx.lineTo(x2, y2); dctx.stroke();
+  }
+  // the arc this mobile's barrel can cover
+  {
+    const a0 = stdA(t.facing, t.m.ang[0]), a1 = stdA(t.facing, t.m.ang[1]);
+    const lo = clamp(Math.min(a0, a1), 0, 180), hi = clamp(Math.max(a0, a1), 0, 180);
+    dctx.strokeStyle = 'rgba(255,191,74,.75)'; dctx.lineWidth = 3 * k; dctx.lineCap = 'butt';
+    dctx.beginPath(); dctx.arc(cx, cy, R + 0.5 * k, -hi * DEG, -lo * DEG); dctx.stroke();
   }
   // hull line
   const A0 = t.facing > 0 ? -tiltDeg : 180 - tiltDeg;
@@ -1704,8 +1840,8 @@ function setIf(key, val, fn){ if (last[key] !== val){ last[key] = val; fn(val); 
 function updateHUD(){
   tanks.forEach((t, i) => {
     const h = hud.hp[i];
-    setIf('hp' + i, t.hp, v => { h.bar.style.width = v + '%'; h.num.textContent = v; });
-    setIf('gh' + i, Math.round(t.shownHp), v => { h.ghost.style.width = v + '%'; });
+    setIf('hp' + i, t.hp + '/' + t.maxHp, () => { h.bar.style.width = (t.hp / t.maxHp * 100) + '%'; h.num.textContent = t.hp; });
+    setIf('gh' + i, Math.round(t.shownHp) + '/' + t.maxHp, () => { h.ghost.style.width = (t.shownHp / t.maxHp * 100) + '%'; });
     setIf('act' + i, i === cur && phase !== 'over' && phase !== 'menu', v => h.box.classList.toggle('active', v));
   });
   const lvl = clamp(Math.round(Math.abs(wind) / 18), 0, 10);
@@ -1759,8 +1895,8 @@ function updateHUD(){
   const real = Math.round(worldElev(t, t.facing, t.elev));
   setIf('ang', Math.round(t.elev) + (t.facing > 0 ? '→' : '←'), v => { hud.ang.textContent = v.replace(/(\d+)/, '$1°'); });
   setIf('real', real, v => { hud.angReal.textContent = v + '°'; });
-  setIf('fuel', Math.round(t.fuel), v => { hud.fuel.style.width = (v / 120 * 100) + '%'; });
-  const key = [cur, Math.round(t.elev * 2), Math.round((t.tilt || 0) * 200), t.facing, t.lastElev, t.lastFacing, dialC.width].join('|');
+  setIf('fuel', Math.round(t.fuel) + '/' + t.m.fuel, () => { hud.fuel.style.width = (t.fuel / t.m.fuel * 100) + '%'; });
+  const key = [cur, t.m.id, Math.round(t.elev * 2), Math.round((t.tilt || 0) * 200), t.facing, t.lastElev, t.lastFacing, dialC.width].join('|');
   if (key !== dialKey){ dialKey = key; drawDial(t); }
   setIf('ctl', canControl(), v => { hud.touchBtns.forEach(b => b.disabled = !v); renderCards(); });
 }
@@ -1926,15 +2062,77 @@ $('#btn-pass').addEventListener('click', e => { passTurn(false); e.currentTarget
 $('#panel-close').addEventListener('click', () => togglePanel(false));
 
 /* ---------- menus ---------- */
-document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { Snd.init(); startGame(b.dataset.mode); }));
-$('#btn-again').addEventListener('click', () => { Snd.init(); startGame(mode); });
+document.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { Snd.init(); openPick(b.dataset.mode); }));
+// again: same mobiles for the players; the computer (or practice target) gets a fresh random one
+$('#btn-again').addEventListener('click', () => { Snd.init(); startGame(mode, mode === 'duo' ? gamePicks : [gamePicks[0], randomMobile()]); });
 $('#btn-home').addEventListener('click', goHome);
 $('#btn-menu').addEventListener('click', goHome);
 function goHome(){
   clearTimeout(overTimer);
   Snd.chargeStop(); Snd.whistleStop(); Snd.rumble(false);
-  phase = 'menu'; shells = []; clearLook(); $('#over').hidden = true; $('#start').hidden = false;
+  phase = 'menu'; shells = []; clearLook(); $('#over').hidden = true; $('#pick').hidden = true; $('#start').hidden = false;
 }
+/* ---------- mobile picker ---------- */
+const PICK_KEY = 'tanchak-mobile-v1';
+const MODE_NAMES = { ai: '컴퓨터와 대결', duo: '둘이서 번갈아', practice: '과녁 연습' };
+let lastPicks = DEFAULT_PICKS.slice();
+try { const o = JSON.parse(localStorage.getItem(PICK_KEY) || 'null'); if (Array.isArray(o)) lastPicks = DEFAULT_PICKS.map((d, i) => MOBILE[o[i]] ? o[i] : d); } catch (e) {}
+let pickMode = 'ai', pickStep = 0, pickNow = [];
+function openPick(m){
+  pickMode = m; pickStep = 0; pickNow = [];
+  $('#start').hidden = true; $('#over').hidden = true; $('#pick').hidden = false;
+  renderPick();
+}
+function renderPick(){
+  const who = pickMode === 'duo' ? (pickStep === 0 ? '1P ' : '2P ') : '';
+  $('#pick-eyebrow').textContent = MODE_NAMES[pickMode];
+  $('#pick-title').textContent = who + '기체 고르기';
+  const box = $('#mobiles');
+  box.innerHTML = MOBILES.map(m => {
+    const own = SHELL[m.shells[m.shells.length - 1]];
+    return `<button class="mob${lastPicks[pickStep] === m.id ? ' last' : ''}" type="button" data-mob="${m.id}" aria-label="${m.name}. ${m.desc}. 체력 ${m.hp}, 이동 ${m.fuel}, 각도 ${m.ang[0]}~${m.ang[1]}도, 전용탄 ${own.name}">
+      <canvas aria-hidden="true"></canvas><b>${m.name}</b><span class="role">${m.desc}</span>
+      <dl><dt>체력</dt><dd><span class="bar"><i style="width:${Math.round(m.hp / 130 * 100)}%"></i></span>${m.hp}</dd>
+      <dt>이동</dt><dd><span class="bar"><i style="width:${Math.round(m.fuel / 180 * 100)}%"></i></span>${m.fuel}</dd>
+      <dt>각도</dt><dd>${m.ang[0]}~${m.ang[1]}°</dd>
+      <dt>전용</dt><dd>${own.name}</dd></dl></button>`;
+  }).join('');
+  requestAnimationFrame(() => box.querySelectorAll('.mob').forEach(b => drawPreview(b.querySelector('canvas'), b.dataset.mob, pickStep)));
+}
+// draws a mobile with the battlefield's own drawTank, pointed at the middle of its angle range
+function drawPreview(cv, mid, ci){
+  const r = cv.getBoundingClientRect(), k = Math.min(2, window.devicePixelRatio || 1);
+  if (r.width < 4 || r.height < 4) return;
+  cv.width = Math.round(r.width * k); cv.height = Math.round(r.height * k);
+  const g = cv.getContext('2d'), m = MOBILE[mid], t = makeTank(ci, 0, mid);
+  t.facing = 1; t.elev = (m.ang[0] + m.ang[1]) / 2;
+  const sc = Math.min(r.height / 64, r.width / 92) * k;
+  g.setTransform(sc, 0, 0, sc, cv.width / 2 - 4 * sc, cv.height - 3 * k);
+  ctx = g;
+  try { drawTank(t, true); } finally { ctx = gameCtx; }
+}
+$('#mobiles').addEventListener('click', e => {
+  const b = e.target.closest('.mob'); if (!b) return;
+  const id = b.dataset.mob;
+  Snd.init(); Snd.tick(0.6);
+  pickNow[pickStep] = id; lastPicks[pickStep] = id;
+  try { localStorage.setItem(PICK_KEY, JSON.stringify(lastPicks)); } catch (err) {}
+  if (pickMode === 'duo' && pickStep === 0){ pickStep = 1; renderPick(); return; }
+  if (pickMode !== 'duo') pickNow[1] = randomMobile();
+  startGame(pickMode, pickNow);
+});
+$('#pick-back').addEventListener('click', () => {
+  if (pickStep > 0){ pickStep--; renderPick(); return; }
+  $('#pick').hidden = true; $('#start').hidden = false;
+});
+// plate badge shows the mobile's silhouette, and its name sits small beside the player's name
+function setBadges(){
+  tanks.forEach((t, i) => {
+    const b = $(`#hp${i} .badge`); b.innerHTML = MOBILE_ICONS[t.m.id]; b.title = t.m.name;
+    $(`#hp${i} .nm`).innerHTML = `${NAMES[mode][i]}<small>${t.m.name}</small>`;
+  });
+}
+
 function checkRotate(){
   const show = document.body.classList.contains('touch') && ch > cw && !portraitOk;
   $('#rotate').hidden = !show;
@@ -1996,7 +2194,8 @@ function start(data){
   }
   // idle scene behind the start menu
   const sx = pickSpawns(); genTerrain(sx); genScenery();
-  tanks = [makeTank(0, sx[0]), makeTank(1, sx[1])]; tanks.forEach(t => t.y = groundY(t.x, 0));
+  tanks = [makeTank(0, sx[0], randomMobile()), makeTank(1, sx[1], randomMobile())]; tanks.forEach(t => t.y = groundY(t.x, 0));
+  setBadges();
   wind = 40; camSnap = true;
   renderCards();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { dialKey = ''; });
@@ -2004,7 +2203,7 @@ function start(data){
 }
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
-  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm },
+  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick,
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 // The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.

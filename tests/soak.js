@@ -1,12 +1,14 @@
 // Autoplay soak test. Runs inside the page (loaded with ?test) and returns the invariant violations it saw.
-// Plays 150,000 frames across all three modes with random movement and mostly AI-planned shots.
+// Plays 150,000 frames across all three modes and random mobiles, with random movement and mostly AI-planned shots.
 (() => {
   const T = window.__tc; const issues = []; const seen = new Set();
   const note = (k, m) => { if (!seen.has(k)) { seen.add(k); issues.push(m); } };
   const modes = ['ai', 'duo', 'practice'];
   let games = 0, frames = 0, phaseFrames = 0, lastPhase = '', maxOps = 0, maxParts = 0, practiceTurns = 0, turns = 0;
   let lastTurn = -1;
-  T.startGame('ai');
+  // every game picks random mobiles so all of them (and their own shells) get played
+  const mob = () => T.MOBILES[(Math.random() * T.MOBILES.length) | 0].id;
+  T.startGame('ai', [mob(), mob()]);
   for (frames = 0; frames < 150000; frames++){
     let g = T.get();
     try {
@@ -25,7 +27,7 @@
     for (const t of g.tanks){
       if (!isFinite(t.x) || !isFinite(t.y)) note('nan', 'tank position NaN in ' + g.mode);
       if (t.y >= 899 && t.alive && !t.airborne) note('bottom' + g.mode, 'alive tank resting at the world bottom (hidden under HUD) in mode ' + g.mode);
-      if (t.hp < 0 || t.hp > 100) note('hp', 'hp out of range ' + t.hp);
+      if (t.hp < 0 || t.hp > t.maxHp) note('hp', 'hp out of range ' + t.hp);
     }
     for (const s of g.shells) if (!isFinite(s.x) || !isFinite(s.y)) note('snan', 'shell NaN');
     for (const [i, st] of g.stats.entries()){
@@ -38,7 +40,7 @@
     if (g.mode === 'practice' && g.phase === 'aim') practiceTurns++;
     const switchPractice = g.mode === 'practice' && g.turnCount > 25;
     if (g.phase === 'over' || switchPractice || phaseFrames > 60 * 40){
-      games++; T.startGame(modes[games % 3]); phaseFrames = 0;
+      games++; T.startGame(modes[games % 3], [mob(), mob()]); phaseFrames = 0;
     }
   }
   return { games, turns, frames, maxOps, maxParts, issues };
