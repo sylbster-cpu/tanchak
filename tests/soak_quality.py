@@ -5,11 +5,12 @@ import os,re,json,sys,time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1]
+(root/'qa-output').mkdir(parents=True,exist_ok=True)
 html=(root/'index.html').read_text().replace(r'if (/[?&]test\b/.test(location.search))','if (true)')
 html=re.sub(r'<link[^>]*fonts\.(?:googleapis|gstatic)\.com[^>]*>', '', html)
 frames=int(sys.argv[1]) if len(sys.argv)>1 else 150000
 with sync_playwright() as p:
- b=p.chromium.launch(headless=True,executable_path=os.getenv('CHROME','/usr/bin/chromium'),args=['--no-sandbox','--disable-dev-shm-usage','--no-proxy-server'])
+ b=p.chromium.launch(headless=True, **({'executable_path': os.environ['CHROME']} if os.getenv('CHROME') else {}), args=['--no-sandbox','--disable-dev-shm-usage','--no-proxy-server'])
  page=b.new_page(viewport={'width':915,'height':412});errs=[];page.on('pageerror',lambda e: errs.append(str(e)))
  page.set_content(html,wait_until='domcontentloaded')
  page.evaluate('''() => {let T=__tc;T.setManualTestMode(true);T.setAutoAll(true);T.S().aiSkill=0.66;

@@ -5,6 +5,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 import json, re, os, sys, time
 ROOT=Path(__file__).parent.parent
+(ROOT/'qa-output').mkdir(parents=True,exist_ok=True)
 html=(ROOT/'index.html').read_text()
 html=html.replace(r'if (/[?&]test\b/.test(location.search))', 'if (true)')
 html=re.sub(r'<link[^>]+(?:fonts\.googleapis\.com|fonts\.gstatic\.com)[^>]*>', '', html)
@@ -13,7 +14,7 @@ def check(name,passed,details=''):
     results.append((name,bool(passed),details))
     print(('PASS' if passed else 'FAIL') + ' ' + name + (' — ' + str(details)[:150] if details else ''),flush=True)
 with sync_playwright() as p:
-  b=p.chromium.launch(headless=True, executable_path=os.getenv('CHROME','/usr/bin/chromium'),args=['--no-sandbox','--disable-dev-shm-usage','--no-proxy-server','--disable-extensions'])
+  b=p.chromium.launch(headless=True, **({'executable_path': os.environ['CHROME']} if os.getenv('CHROME') else {}), args=['--no-sandbox','--disable-dev-shm-usage','--no-proxy-server','--disable-extensions'])
   for touch,w,h in [(False,1280,720),(True,915,412),(True,658,320),(True,780,360)]:
     ctx=b.new_context(viewport={'width':w,'height':h},device_scale_factor=1,has_touch=touch,is_mobile=touch)
     page=ctx.new_page();errs=[];page.on('pageerror',lambda e: errs.append(str(e)))
