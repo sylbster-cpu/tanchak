@@ -80,8 +80,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;const res=[]; const s0=T.S().aiSkill; T.S().aiSkill=1;
       for(let k=0;k<4;k++){T.startGame('ai');const g=T.get(), a=g.tanks[1], b=g.tanks[0];
         T.setHand(a,['drill','drill']);
-        let pl=T.planShot(a); for(let n=0;n<40 && a.sel!=='drill';n++) pl=T.planShot(a);
-        if(a.sel!=='drill'){res.push(null);continue;}
+        const pl=T.planShot(a,false,'drill');
         a.facing=pl.facing; a.elev=pl.elev; const hp0=b.hp; T.fire(a,pl.power);
         for(let i=0;i<900;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
         res.push(hp0-b.hp);}
@@ -205,7 +204,7 @@ with sync_playwright() as p:
       for(const m of T.MOBILES){const own=m.shells[m.shells.length-1];let hits=0,bounced=0;
         for(let k=0;k<5;k++){T.startGame('ai',['digger',m.id]);const g=T.get(),a=g.tanks[1],b=g.tanks[0];
           T.setHand(a,[own,own]);
-          let pl=T.planShot(a);for(let n=0;n<40&&a.sel!==own;n++)pl=T.planShot(a);
+          const pl=T.planShot(a,false,own);
           a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);
           for(let i=0;i<900;i++){T.update(1/60);for(const s of T.get().shells)if(s.bounced)bounced++;if(T.get().phase!=='flying')break;}
           if(b.hp<hp0)hits++;}
@@ -225,8 +224,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
       for(let k=0;k<10&&out.length<2;k++){T.startGame('duo',['armored','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];b.x=a.x+260;b.y=0;for(let i=0;i<90;i++)T.update(1/60);
         T.setHand(a,['pierce','pierce']);a.facing=1;a.elev=40;
-        let best=null;for(let pw=20;pw<=100;pw+=1){}  // aim by searching with the real game
-        const s0=T.S().aiSkill;T.S().aiSkill=1;let pl=T.planShot(a);for(let n=0;n<40&&a.sel!=='pierce';n++)pl=T.planShot(a);T.S().aiSkill=s0;
+        const s0=T.S().aiSkill;T.S().aiSkill=1;const pl=T.planShot(a,false,'pierce');T.S().aiSkill=s0;
         a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase!=='flying')break;}
         if(T.get().stats[0].direct)out.push(hp0-b.hp);}
       T.S().turnTime=20;return out;})()""")
@@ -287,6 +285,50 @@ with sync_playwright() as p:
       const k=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));k('Digit3');const s3=a.sel;k('Digit1');const s1=a.sel;
       T.S().turnTime=20;return {s3,s1};})()""")
     check("cards: number keys pick basic (1) and hand slots (2-4)", r["s3"] == "split" and r["s1"] == "basic", r)
+
+    # ---- computer: difficulty, moving, delay-aware shells, thinking spread over frames ----
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),tt=S.turnTime,sk=S.aiSkill;S.turnTime=0;const out={};const mobs=T.MOBILES.map(m=>m.id);let worst=0;
+      for(const [name,v] of [['easy',0.2],['hard',0.85]]){S.aiSkill=v;let hits=0,n=0;
+        for(let k=0;k<30;k++){T.startGame('ai',[mobs[k%4],mobs[(k>>2)%4]]);T.passTurn(false);const me=T.get().tanks[0],hp0=me.hp;let fired=false;
+          for(let i=0;i<60*12;i++){const t0=performance.now();T.update(1/60);const ms=performance.now()-t0;const ph=T.get().phase;if(ph==='aiThink')worst=Math.max(worst,ms);
+            if(ph==='flying')fired=true;if(fired&&(ph==='aim'||ph==='over'))break;}
+          n++;if(me.hp<hp0)hits++;}
+        out[name]=+(hits/n).toFixed(2);}
+      S.turnTime=tt;S.aiSkill=sk;out.worstThinkFrameMs=Math.round(worst);return out;})()""")
+    check("difficulty: hard hits clearly more often than easy", r["hard"] - r["easy"] >= 0.3, r)
+    check("computer thinks a few ms per frame instead of freezing one frame", r["worstThinkFrameMs"] < 20, r)
+
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),wm=S.windMax,tt=S.turnTime,sk=S.aiSkill;S.windMax=0;S.turnTime=0;S.aiSkill=0.85;const out=[];
+      for(let k=0;k<16;k++){T.startGame('ai',['digger','light']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];
+        const side=ai.x>1700?-1:1;me.x=Math.max(40,Math.min(T.W-40,ai.x+side*2200));me.y=0;for(let i=0;i<120;i++)T.update(1/60);
+        T.passTurn(false);const x0=ai.x;let fired=false;
+        for(let i=0;i<60*12;i++){T.update(1/60);const ph=T.get().phase;if(ph==='flying')fired=true;if(fired&&(ph==='aim'||ph==='over'))break;}
+        const log=T.aiLog().slice(-2),mv=log.find(l=>l.move!==undefined),shot=log[log.length-1];
+        out.push({moved:!!mv,toward:mv?Math.sign(mv.move-x0)===side:null,dx:Math.round(ai.x-x0),here:mv&&Math.round(mv.missHere),there:mv&&Math.round(mv.missThere),miss:Math.round(shot.miss)});}
+      S.windMax=wm;S.turnTime=tt;S.aiSkill=sk;return out;})()""")
+    moved = [o for o in r if o["moved"]]
+    check("computer drives toward the player when it has no clean shot from where it stands",
+          moved and all(o["toward"] and abs(o["dx"]) >= 15 and o["there"] < o["here"] for o in moved) and all(o["moved"] or o["miss"] <= 12 for o in r),
+          {"moved": len(moved), "cases": r})
+
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),wm=S.windMax,tt=S.turnTime,sk=S.aiSkill;S.windMax=0;S.turnTime=0;S.aiSkill=0.85;const res=[];
+      for(let k=0;k<20&&res.length<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];me.x=ai.x-420;me.y=0;for(let i=0;i<120;i++)T.update(1/60);
+        T.passTurn(false);me.delay=0;ai.delay=0;T.setHand(ai,['heavy','heavy','heavy']);const tight=T.planShot(ai);
+        if(tight.miss>0)continue;me.delay=900;T.setHand(ai,['heavy','heavy','heavy']);const loose=T.planShot(ai);res.push([tight.sel,loose.sel]);}
+      S.windMax=wm;S.turnTime=tt;S.aiSkill=sk;return res;})()""")
+    check("computer skips the heavy shell when its delay would give the player two turns in a row",
+          len(r) >= 2 and all(a == "basic" and b == "heavy" for a, b in r), r)
+
+    ev("document.getElementById('btn-menu').click()"); time.sleep(0.2)
+    pg.click("[data-mode=ai]"); time.sleep(0.2)
+    pg.click("#pick-diff [data-skill='0.85']"); time.sleep(0.1)
+    r = ev("({skill:window.__tc.S().aiSkill,on:document.querySelector('#pick-diff .chip.on').textContent,shown:!document.getElementById('pick-diff').hidden})")
+    pg.click("#pick-back"); time.sleep(0.1); pg.click("[data-mode=duo]"); time.sleep(0.2)
+    r["duoShown"] = ev("!document.getElementById('pick-diff').hidden")
+    pg.click("#pick-back"); time.sleep(0.1)
+    ev("window.__tc.S().aiSkill=0.5")
+    check("picker: difficulty chips set the computer's skill (only against the computer)",
+          r["skill"] == 0.85 and r["on"] == "어려움" and r["shown"] and not r["duoShown"], r)
 
     check("no page errors", not errs, errs[:5])
     b.close()

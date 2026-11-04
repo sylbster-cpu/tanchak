@@ -238,6 +238,8 @@ body.touch #btn-fire{display:grid}
 .pick-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .pick-head > div{display:grid;gap:6px}
 .pick-head h2{font-size:clamp(30px,5vw,46px)}
+.pick-head > .diff{display:flex;align-items:center;gap:5px;margin-left:auto}
+.diff .cap{margin-right:3px}
 .mobiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .mob{display:grid;gap:6px;align-content:start;min-width:0;text-align:left;padding:10px;border-radius:13px;background:linear-gradient(180deg,var(--steel-3),var(--steel-2));border:2px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 0 rgba(0,0,0,.45)}
 .mob:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.45)}
@@ -375,6 +377,7 @@ body.touch #btn-fire{display:grid}
   <div class="sheet pick">
     <div class="pick-head">
       <div><p class="eyebrow" id="pick-eyebrow">컴퓨터와 대결</p><h2 id="pick-title">기체 고르기</h2></div>
+      <div class="diff" id="pick-diff" hidden></div>
       <button class="chip" type="button" id="pick-back">뒤로</button>
     </div>
     <div class="mobiles" id="mobiles"></div>
@@ -440,7 +443,7 @@ const DEFAULTS = {
   flashOn: true, numbersOn: true, trailOn: true,
   volume: 0.7, soundOn: true, vibrateOn: true,
   turnTime: 20, delayOn: true, handSize: 3,
-  aiSkill: 0.45
+  aiSkill: 0.5
 };
 let S = Object.assign({}, DEFAULTS);
 try { const raw = localStorage.getItem(KEY); if (raw){ const o = JSON.parse(raw); for (const k in o) if (k in DEFAULTS) S[k] = o[k]; } } catch (e) {}
@@ -494,7 +497,7 @@ const MOBILE_ICONS = {
 // Turn order follows GunBound's delay rule: each action adds delay, every second of thinking adds 10,
 // and whoever has the lower total moves next. Skipping costs less than shooting.
 const PASS_DELAY = 500;
-const TURN_PHASES = ['aim', 'charging', 'aiThink', 'aiAim', 'aiCharge'];
+const TURN_PHASES = ['aim', 'charging', 'aiThink', 'aiMove', 'aiAim', 'aiCharge'];
 const SHELL = Object.fromEntries(SHELLS.map(s => [s.id, s]));
 SHELL.child = { id: 'child', r: 27, dmg: 20, gMul: 1, vMul: 1, windMul: 1 };
 
@@ -709,7 +712,7 @@ let tanks = [], shells = [], parts = [], texts = [], rings = [], timers = [];
 let cur = 0, wind = 0, turnCount = 0;
 let power = 0, powerDir = 1;
 let phaseT = 0, settleT = 0, turnT = 0, tickSec = -1;
-let aiPlan = null;
+let aiPlan = null, aiJob = null, aiMoved = false, aiMoveTo = 0, aiStuck = 0, aiLog = [];
 let hitStop = 0, trauma = 0, shakeT = 0, screenFlash = 0, timeScale = 1;
 const cam = { x: W / 2, y: H / 2, z: 1 };
 const held = { left: false, right: false, up: false, down: false };
@@ -785,6 +788,7 @@ function beginTurn(again){
   power = 0; powerDir = 1;
   phaseT = 0;
   phase = isHuman(cur) ? 'aim' : 'aiThink';
+  aiJob = null; aiMoved = false;
   renderCards();
   let label;
   if (mode === 'ai') label = again ? (cur === 0 ? '한 번 더!' : '컴퓨터 한 번 더') : (cur === 0 ? '내 차례' : '컴퓨터 차례');
@@ -998,22 +1002,132 @@ function simulate(t, facing, rel, p, def, target){
   }
   return 1e9;
 }
-function planShot(t){
-  const target = tanks[1 - t.i];
-  const avail = [...new Set(t.hand.filter(id => id && id !== 'basic'))];
-  t.sel = (avail.length && Math.random() < 0.45) ? avail[(Math.random() * avail.length) | 0] : 'basic';
-  const def = SHELL[t.sel];
-  const facing = target.x >= t.x ? 1 : -1;
-  const [lo, hi] = t.m.ang;
-  let best = { d: Infinity, e: clampElev(t, 45), p: 70 };
-  for (let e = Math.max(lo, 4); e <= hi; e += 2){
-    for (let p = 22; p <= 100; p += 1.5){
-      const d = simulate(t, facing, e, p, def, target);
-      if (d < best.d) best = { d, e, p };
+// Difficulty is one number, aiSkill: it sets the aiming error, and from AI_SMART up the computer also drives
+// to a better spot when it has no clean shot and weighs each shell's damage against its delay.
+const AI_LEVELS = [['쉬움', 0.2], ['보통', 0.5], ['어려움', 0.85]];
+const AI_SMART = 0.35;
+function tiltAt(x, y){
+  const gl = groundY(x - 16, y - 24), gr = groundY(x + 16, y - 24);
+  return (gl < NO_GROUND && gr < NO_GROUND) ? clamp(Math.atan2(gr - gl, 32), -0.38, 0.38) : 0;
+}
+// where the tank would stop if it drove toward tx, by moveTank's rules (fuel, climbing, the other tank)
+function driveTo(t, tx){
+  const o = tanks[1 - t.i], dir = Math.sign(tx - t.x);
+  let x = t.x, y = t.y, fuel = t.fuel;
+  while (dir && (tx - x) * dir > 1 && fuel > 0){
+    const nx = clamp(x + dir * 2, 26, W - 26);
+    if (nx === x) break;
+    if (o && o.alive && !o.gone && Math.sign(o.x - x) === dir && Math.abs(o.x - nx) < 56 && Math.abs(o.y - y) < 44) break;
+    let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, y - t.m.climb - 4));
+    if (gt < y - t.m.climb) break;
+    let g = NO_GROUND; for (const ox of [-16, -8, 0, 8, 16]) g = Math.min(g, groundY(nx + ox, Math.min(y, gt) - 14));
+    if (g >= H - 20) break;   // would drop into a hole to the bottom
+    x = nx; fuel -= 2; y = g;
+  }
+  return { x, y };
+}
+// damage a shell landing d px from the target's centre would do (0 = direct hit), as explode() works it out
+function shotDamage(def, d){
+  if (d === 0) return def.dmg * (def.directMul || 1.25);
+  return d < def.r + TANK_R ? def.dmg * clamp(1 - (d - 10) / (def.r + TANK_R), 0, 1) : 0;
+}
+// Tries every angle and power for one shell from v (the tank, or a copy of it standing somewhere else).
+// coarse uses a quarter of the grid, for comparing spots and shells. The pick favours shots whose neighbours
+// also land close, so the aiming error added afterwards still tends to hit; ev is the damage to expect once
+// that error (the same spread planJob adds) is taken into account. Yields once per angle.
+function* searchShot(v, def, target, coarse){
+  const facing = target.x >= v.x ? 1 : -1;
+  const es = [], ps = [], de = coarse ? 4 : 2, dp = coarse ? 3 : 1.5;
+  for (let e = Math.max(v.m.ang[0], 4); e <= v.m.ang[1]; e += de) es.push(e);
+  for (let p = 22; p <= 100; p += dp) ps.push(p);
+  const np = ps.length, d = new Float32Array(es.length * np);
+  for (let i = 0; i < es.length; i++){
+    for (let j = 0; j < np; j++) d[i * np + j] = simulate(v, facing, es[i], ps[j], def, target);
+    yield;
+  }
+  let best = { sc: Infinity, d: 1e9, e: clampElev(v, 45), p: 70 };
+  for (let i = 0; i < es.length; i++) for (let j = 0; j < np; j++){
+    const dij = d[i * np + j];
+    if (dij >= 1e8) continue;
+    let sum = 0, n = 0;
+    for (let a = -1; a <= 1; a++) for (let b = -2; b <= 2; b++){
+      const ii = i + a, jj = j + b;
+      if (ii >= 0 && jj >= 0 && ii < es.length && jj < np){ sum += Math.min(d[ii * np + jj], 300); n++; }
+    }
+    const sc = dij * 2 + sum / n;
+    if (sc < best.sc) best = { sc, d: dij, e: es[i], p: ps[j], i, j };
+  }
+  let ev = 0;
+  if (best.i !== undefined){
+    const err = 1 - S.aiSkill, se = Math.max(0.5, 4 * err), sp = Math.max(0.75, 9 * err);
+    let wsum = 0;
+    for (let a = -2; a <= 2; a++) for (let b = -3; b <= 3; b++){
+      const ii = best.i + a, jj = best.j + b;
+      if (ii < 0 || jj < 0 || ii >= es.length || jj >= np) continue;
+      const w = Math.exp(-((a * de / se) ** 2 + (b * dp / sp) ** 2) / 2);
+      ev += w * shotDamage(def, d[ii * np + jj]); wsum += w;
+    }
+    ev /= wsum;
+  }
+  return { facing, d: best.d, e: best.e, p: best.p, ev };
+}
+// what a shell is worth this turn: likely damage, a bonus for a finishing blow, minus the cost of its delay
+function shellValue(t, target, def, r){
+  if (r.ev <= 0) return def.id === 'basic' ? -0.5 : -1;   // nothing lands: keep the cards
+  let v = r.ev;
+  if (def.id !== 'basic') v += 2;   // a card left unplayed at the end is wasted
+  if (def.windMul === 0) v += Math.abs(wind) / Math.max(1, S.windMax) * 6;   // steadier in a strong wind
+  if (shotDamage(def, r.d) >= target.hp) v += 40 * Math.min(1, r.ev / Math.max(1, target.hp));   // a likely finishing blow
+  if (S.delayOn && mode !== 'practice'){
+    const o = tanks[1 - t.i], after = t.delay + def.delay + Math.floor(turnT) * 10;
+    v -= (def.delay - SHELL.basic.delay) * 0.008;
+    if (after - o.delay > SHELL.basic.delay) v -= 18;   // the other side would get two turns in a row
+  }
+  return v;
+}
+function* planJob(t, mayMove, force){
+  const target = tanks[1 - t.i], smart = S.aiSkill >= AI_SMART;
+  const hand = ['basic', ...new Set(t.hand.filter(Boolean))];
+  // 1. with no clean shot from here, look for a spot within reach that has one
+  if (smart && mayMove && t.fuel > 10){
+    const here = yield* searchShot(t, SHELL.basic, target, true);
+    if (here.d > 12){
+      let best = { d: here.d, x: t.x };
+      for (const dx of [-30, 30, -60, 60, -100, 100, -150, 150]){
+        if (Math.abs(dx) > t.fuel) continue;
+        const p = driveTo(t, t.x + dx);
+        if (Math.abs(p.x - t.x) < 15) continue;
+        const r = yield* searchShot(Object.assign({}, t, { x: p.x, y: p.y, tilt: tiltAt(p.x, p.y) }), SHELL.basic, target, true);
+        if (r.d < best.d - 10) best = { d: r.d, x: p.x };
+      }
+      if (best.x !== t.x) return { move: best.x, missHere: here.d, missThere: best.d };
     }
   }
+  // 2. the shell: easy picks like a beginner, otherwise the best value
+  let pick = 'basic';
+  if (force) pick = force;
+  else if (!smart){
+    const sp = hand.slice(1);
+    if (sp.length && Math.random() < 0.45) pick = sp[(Math.random() * sp.length) | 0];
+  } else {
+    let bestV = -Infinity;
+    for (const id of hand){
+      const v = shellValue(t, target, SHELL[id], yield* searchShot(t, SHELL[id], target, true));
+      if (v > bestV){ bestV = v; pick = id; }
+    }
+  }
+  // 3. aim it on the full grid, then add the aiming error
+  const r = yield* searchShot(t, SHELL[pick], target, false);
   const err = 1 - S.aiSkill;
-  return { facing, elev: clampElev(t, Math.round(best.e + randn() * err * 4)), power: clamp(best.p + randn() * err * 9, 5, 100) };
+  return { sel: pick, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, 5, 100), miss: r.d };
+}
+// all at once (tests, and the soak test's stand-in for a human); the game itself runs planJob a few ms per frame
+function planShot(t, mayMove, force){
+  const job = planJob(t, mayMove, force);
+  let r;
+  do { r = job.next(); } while (!r.done);
+  if (r.value.sel) t.sel = r.value.sel;
+  return r.value;
 }
 
 /* ---------- input ---------- */
@@ -1176,7 +1290,26 @@ function updateControl(dt, rdt){
 
   if (phase === 'aiThink'){
     phaseT += rdt;
-    if (phaseT > 0.75){ aiPlan = planShot(t); t.facing = aiPlan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
+    // think a few ms per frame so the screen keeps moving; after driving, let the hull settle first
+    if (!aiJob && phaseT > (aiMoved ? 0.2 : 0)) aiJob = { gen: planJob(t, !aiMoved), plan: null };
+    if (aiJob && !aiJob.plan){
+      const t0 = performance.now(); let r;
+      do { r = aiJob.gen.next(); } while (!r.done && performance.now() - t0 < 5);
+      if (r.done) aiJob.plan = r.value;
+    }
+    if (aiJob && aiJob.plan && phaseT > (aiMoved ? 0.35 : 0.75)){
+      const plan = aiJob.plan; aiJob = null;
+      aiLog.push(plan); if (aiLog.length > 50) aiLog.shift();
+      if (plan.move !== undefined){ aiMoveTo = plan.move; aiMoved = true; aiStuck = 0; phase = 'aiMove'; phaseT = 0; }
+      else { aiPlan = plan; t.sel = plan.sel; t.facing = plan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
+    }
+  } else if (phase === 'aiMove'){
+    phaseT += rdt;
+    const dir = Math.sign(aiMoveTo - t.x), x0 = t.x;
+    const arrived = !dir || Math.abs(aiMoveTo - t.x) <= 1.5 || t.fuel <= 0;
+    if (!arrived) moveTank(t, dir, rdt);
+    aiStuck = (t.x === x0 && !t.airborne) ? aiStuck + rdt : 0;
+    if (arrived || aiStuck > 0.3 || phaseT > 4){ Snd.rumble(false); phase = 'aiThink'; phaseT = 0; }
   } else if (phase === 'aiAim'){
     const diff = aiPlan.elev - t.elev, step = 40 * rdt;
     if (Math.abs(diff) <= step){ t.elev = aiPlan.elev; phaseT += rdt; if (phaseT > 0.35){ phase = 'aiCharge'; power = 0; powerDir = 1; Snd.chargeStart(); } }
@@ -2106,7 +2239,7 @@ $('#btn-menu').addEventListener('click', goHome);
 function goHome(){
   clearTimeout(overTimer);
   Snd.chargeStop(); Snd.whistleStop(); Snd.rumble(false);
-  phase = 'menu'; shells = []; clearLook(); $('#over').hidden = true; $('#pick').hidden = true; $('#start').hidden = false;
+  phase = 'menu'; shells = []; clearLook(); aiJob = null; $('#over').hidden = true; $('#pick').hidden = true; $('#start').hidden = false;
 }
 /* ---------- mobile picker ---------- */
 const PICK_KEY = 'tanchak-mobile-v1';
@@ -2123,6 +2256,7 @@ function renderPick(){
   const who = pickMode === 'duo' ? (pickStep === 0 ? '1P ' : '2P ') : '';
   $('#pick-eyebrow').textContent = MODE_NAMES[pickMode];
   $('#pick-title').textContent = who + '기체 고르기';
+  renderDiff();
   const box = $('#mobiles');
   box.innerHTML = MOBILES.map(m => {
     const own = SHELL[m.shells[m.shells.length - 1]];
@@ -2162,6 +2296,18 @@ $('#pick-back').addEventListener('click', () => {
   $('#pick').hidden = true; $('#start').hidden = false;
 });
 // plate badge shows the mobile's silhouette, and its name sits small beside the player's name
+// vs computer: three difficulty presets for aiSkill (the tuning panel can set any value in between)
+function renderDiff(){
+  const el = $('#pick-diff');
+  el.hidden = pickMode !== 'ai';
+  if (el.hidden) return;
+  const near = AI_LEVELS.reduce((b, l) => Math.abs(l[1] - S.aiSkill) < Math.abs(b[1] - S.aiSkill) ? l : b);
+  el.innerHTML = '<span class="cap">컴퓨터</span>' + AI_LEVELS.map(l => `<button class="chip${l === near ? ' on' : ''}" type="button" data-skill="${l[1]}" aria-pressed="${l === near}">${l[0]}</button>`).join('');
+}
+$('#pick-diff').addEventListener('click', e => {
+  const b = e.target.closest('[data-skill]'); if (!b) return;
+  S.aiSkill = +b.dataset.skill; saveSettings(); renderDiff(); Snd.tick(0.5);
+});
 function setBadges(){
   tanks.forEach((t, i) => {
     const b = $(`#hp${i} .badge`); b.innerHTML = MOBILE_ICONS[t.m.id]; b.title = t.m.name;
@@ -2239,7 +2385,7 @@ function start(data){
 }
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
-  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
+  toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
   setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; },
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
