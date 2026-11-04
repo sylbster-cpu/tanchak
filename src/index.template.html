@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SHELLBOUND — 셸바운드</title>
+<meta name="description" content="바람을 읽고, 한 발로 뒤집다. PC와 휴대폰으로 즐기는 레트로 턴제 포격 게임 SHELLBOUND(셸바운드).">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<!-- SHELLBOUND:CSS -->
+</head>
+<body class="in-lobby">
+<canvas id="game" aria-label="포격 전장"></canvas>
+
+<header id="hud-top">
+  <div class="plate p1 steel" id="hp0">
+    <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
+    <div class="pinfo">
+      <div class="pname"><span class="nm">나</span><span class="turn-tag">턴</span><span class="dly"></span></div>
+      <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
+    </div>
+  </div>
+  <div id="center-top">
+    <div class="ctr-row">
+    <div id="timer" class="idle" title="남은 시간" hidden><b>20</b></div>
+    <div id="wind" class="steel" title="바람 방향과 세기">
+      <span class="cap">바람</span>
+      <svg viewBox="0 0 40 16" aria-hidden="true"><path d="M3 8h28M23 2l10 6-10 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="pips"></span>
+      <span class="lcd"><b>0</b></span>
+    </div>
+    </div>
+  </div>
+  <div class="plate p2 steel" id="hp1">
+    <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
+    <div class="pinfo">
+      <div class="pname"><span class="dly"></span><span class="turn-tag">턴</span><span class="nm">컴퓨터</span></div>
+      <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
+    </div>
+  </div>
+  <div class="chips left">
+    <button id="btn-menu" class="chip" type="button">메뉴로</button>
+    <button id="btn-tune" class="chip" type="button">설정</button>
+    <button class="chip audio-toggle" type="button" data-audio-toggle aria-pressed="false">소리 켜짐</button>
+  </div>
+  <canvas id="minimap" aria-label="전체 지도. 누르거나 끌면 그곳을 봅니다"></canvas>
+  <div class="chips right">
+    <button id="btn-pass" class="chip" type="button" hidden>턴 넘기기</button>
+    <button id="btn-full" class="chip" type="button" hidden>전체화면</button>
+  </div>
+</header>
+
+<footer id="console">
+  <div class="tpad c-move">
+    <button class="tbtn" type="button" data-hold="left" aria-label="왼쪽으로 이동">◀</button>
+    <button class="tbtn" type="button" data-hold="right" aria-label="오른쪽으로 이동">▶</button>
+  </div>
+  <div class="c-angle">
+    <canvas id="dial" aria-label="각도계"></canvas>
+    <div id="ang-compact" aria-live="off"><small>조준각</small><b id="ang-mini">45°</b></div>
+    <div class="angle-read">
+      <div class="lcd"><small>조준각</small><b id="ang">45°</b></div>
+      <div class="lcd sub"><small>실제각</small><b id="ang-real">45°</b></div>
+      <div class="fuel"><span class="cap">이동</span><div class="fuelbar"><i></i></div></div>
+    </div>
+  </div>
+  <div class="c-main">
+    <div class="power-row">
+      <span class="cap">파워</span>
+      <div id="gauge" aria-label="파워 게이지"><div class="fill"></div><div class="ticks"></div><div class="prev" hidden><span>이전</span></div></div>
+      <div class="lcd" id="pow-lcd"><b id="pow">0</b></div>
+    </div>
+    <div id="cards" role="toolbar" aria-label="포탄 고르기"></div>
+    <div id="shot-info" aria-label="선택한 포탄과 다음 턴"></div>
+  </div>
+  <div class="c-fire">
+    <div class="keyhint desk"><button class="key" id="keycap" type="button" aria-label="누르고 있다가 떼면 발사">발사 <small>SPACE</small></button><span>길게 누르고 떼면 발사</span><small>←→ 이동 / ↑↓ 각도 / 1~4 포탄<br>C 아이템 / P 턴 넘기기 / T 설정</small></div>
+    <div class="tpad angpad">
+      <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
+      <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
+    </div>
+    <button id="btn-fire" type="button" aria-label="누르고 있다가 떼면 발사">발사</button>
+  </div>
+</footer>
+
+<div id="fxpop" class="steel" hidden role="dialog" aria-label="아이템"></div>
+<div id="banner" aria-live="polite"></div>
+<div id="toast" class="steel" aria-live="polite"></div>
+
+<section id="start" class="overlay">
+  <div class="lobby-wrap">
+    <header class="lobby-header">
+      <div class="wordmark"><span class="pixel-cross" aria-hidden="true"></span><span>1 대 1 포격전</span></div>
+      <nav aria-label="게임 메뉴"><button class="chip" type="button" id="lobby-help">조작법</button><button class="chip" type="button" id="lobby-settings">설정</button><button class="chip audio-toggle" type="button" data-audio-toggle aria-pressed="false">소리 켜짐</button></nav>
+    </header>
+    <div class="lobby-main">
+      <div class="lobby-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> 포격 준비 완료</p>
+        <h1 class="title">SHELLBOUND<span>셸바운드</span></h1>
+        <p class="tagline">바람을 읽고, 한 발로 뒤집다.</p>
+        <div class="modes">
+          <button class="mode primary" type="button" data-mode="ai"><span class="mode-copy"><b>AI 대전</b><span>컴퓨터와 1 대 1 포격전</span></span><span class="mode-arrow" aria-hidden="true">▶</span></button>
+          <button class="mode" type="button" data-mode="duo"><span class="mode-copy"><b>둘이서 대전</b><span>한 기기로 번갈아 겨루기</span></span><span class="mode-arrow" aria-hidden="true">▶</span></button>
+          <button class="mode" type="button" data-mode="practice"><span class="mode-copy"><b>연습 사격</b><span>시간 제한 없이 감각 익히기</span></span><span class="mode-arrow" aria-hidden="true">▶</span></button>
+        </div>
+        <p class="lobby-prompt">모드를 선택하고 전장으로 출격하세요</p>
+      </div>
+      <section class="hangar" aria-label="탱크 미리보기">
+        <div class="hangar-head"><span class="eyebrow">탱크 미리보기</span><label class="map-choice">전장 <select id="map-choice" aria-label="전장 고르기"><option value="random">무작위</option><option value="frontier">전선</option><option value="canyon">협곡</option><option value="highland">고원</option></select></label></div>
+        <div class="tank-stage"><div class="stage-reticle" aria-hidden="true"></div><canvas id="hero-tank" aria-label="선택한 탱크 미리보기"></canvas><div class="stage-floor" aria-hidden="true"></div></div>
+        <div class="hangar-caption"><div><span class="eyebrow" id="hero-role">DRILLER</span><h2 id="hero-name">드릴러</h2></div><span class="hero-shell" id="hero-shell">전용탄 · 굴착탄</span></div>
+        <p class="hero-desc" id="hero-desc">급경사를 잘 오릅니다. 굴착탄이 지형 속으로 파고듭니다.</p>
+        <div class="hangar-tabs" id="hangar-tabs" aria-label="미리 볼 탱크"></div>
+      </section>
+    </div>
+    <footer class="lobby-footer"><span>바람 / 각도 / 파워</span><span class="desk">← → 이동 &nbsp; ↑ ↓ 조준 &nbsp; SPACE 발사</span><span class="touch-hint">가로 화면으로 플레이하세요</span></footer>
+  </div>
+</section>
+
+<section id="help" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
+  <div class="sheet help-sheet">
+    <div class="pick-head"><div><h2 id="help-title">조작법</h2></div><button class="chip" type="button" id="help-close">닫기</button></div>
+    <ol class="help-steps"><li><b>위치와 각도</b><span>← →로 이동, ↑ ↓로 각도를 조절합니다. 휴대폰에서는 화면 아래 화살표를 누르세요.</span></li><li><b>탄종과 아이템</b><span>포탄 4종 중 하나를 선택합니다. 아이템은 한 턴에 하나, 선택한 포탄에 효과를 더합니다.</span></li><li><b>길게 누르고 발사</b><span>SPACE 또는 발사 버튼을 누르고 원하는 파워가 되었을 때 떼세요. 짧게 누르면 취소됩니다. 바람이 탄도를 바꿉니다.</span></li></ol>
+    <ul class="help-rules"><li>상대의 체력을 모두 깎거나 맵 아래로 떨어뜨리면 승리합니다.</li><li>기본 제한 시간은 20초입니다. 충전 중 시간이 끝나면 그 파워로 발사하고, 조준 중이면 턴을 넘깁니다.</li><li>남은 딜레이가 낮은 탱크가 다음 턴을 갖습니다. 포탄·아이템의 딜레이에 조준 시간이 더해지므로, 같은 탱크가 연속으로 쏠 수도 있습니다. 포탄 아래에서 다음 턴을 확인하세요.</li><li>조준각은 탱크 차체를 기준으로 표시됩니다. 비탈에 서면 실제 발사각이 달라집니다.</li></ul>
+    <p class="help-note">전장을 끌거나 미니맵을 눌러 둘러보세요. 전장을 한 번 누르거나 발사하면 카메라가 돌아옵니다. 포탄을 선택하면 특징이 표시됩니다.</p>
+  </div>
+</section>
+
+<section id="pick" class="overlay" hidden>
+  <div class="sheet pick">
+    <div class="pick-head">
+      <div><p class="eyebrow" id="pick-eyebrow">컴퓨터와 대결</p><h2 id="pick-title">탱크 고르기</h2></div>
+      <div class="diff" id="pick-diff" hidden></div>
+      <button class="chip" type="button" id="pick-back">뒤로</button>
+    </div>
+    <div class="mobiles" id="mobiles"></div>
+    <p class="pick-note"><span class="status-dot" aria-hidden="true"></span> 탱크를 선택하면 바로 출격합니다 <span>기본탄 무제한 / 특수탄 각 2발</span></p>
+  </div>
+</section>
+
+<section id="over" class="overlay" hidden>
+  <div class="sheet">
+    <p class="eyebrow" id="over-eyebrow">결과</p>
+    <h2 id="over-title">승리</h2>
+    <p id="over-stats"></p>
+    <div class="modes row">
+      <button class="mode primary" type="button" id="btn-again"><b>재출격</b><span>새 전장에서 한 판 더</span></button>
+      <button class="mode" type="button" id="btn-home"><b>메뉴로</b><span>대전 모드 선택</span></button>
+    </div>
+  </div>
+</section>
+
+<section id="rotate" class="overlay" hidden>
+  <div class="sheet">
+    <h2>가로로 돌려 주세요</h2>
+    <p class="lede">전장이 가로로 넓어서 휴대폰을 눕혀야 잘 보입니다.</p>
+    <button class="chip" type="button" id="btn-portrait">세로로 계속하기</button>
+  </div>
+</section>
+
+<button id="panel-shade" type="button" aria-label="설정 닫기" tabindex="-1" hidden></button>
+<aside id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panel-title">
+  <div class="panel-head"><h2 id="panel-title">설정</h2><button class="chip" type="button" id="panel-close">닫기</button></div>
+  <p id="pause-note" class="pause-note" hidden>일시정지 중</p>
+  <p class="panel-note">설정은 이 브라우저에 저장됩니다.</p>
+  <div class="panel-actions">
+    <button class="chip on" type="button" id="juice-master">전투 연출 켜짐</button>
+    <button class="chip" type="button" id="panel-help">조작법</button>
+    <button class="chip" type="button" id="btn-reset">기본값으로</button>
+  </div>
+  <div id="panel-body"></div>
+  <details id="advanced-settings"><summary>대전 규칙과 세부 설정</summary><p class="panel-note">직접 규칙을 바꿔 즐기는 옵션입니다. 기본 대전은 초기 설정을 기준으로 합니다.</p><div id="advanced-body"></div><button class="chip" type="button" id="btn-copy">설정값 복사</button><textarea id="copy-box" hidden readonly aria-label="복사할 설정값"></textarea></details>
+</aside>
+
+<!-- SHELLBOUND:JS -->
+</body>
+</html>

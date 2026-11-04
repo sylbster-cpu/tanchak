@@ -416,6 +416,53 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
 .help-rules{margin:0;padding-left:18px;font:12px/1.65 var(--text);color:#b7cbcd;display:grid;gap:6px}
 .mob .role-short{display:none}
 @media(max-height:460px){#shot-info{font-size:10px}.c-main{gap:5px}.lobby-copy .mode{grid-template-columns:minmax(0,1fr) 12px}.mob .role{display:none}.mob .role-short{display:block;font:10px/1.4 var(--text);color:#c2cdca;min-height:1.4em}.mob-code{display:none}.mob dl{gap:3px 6px}.help-rules{font-size:11px}}
+
+
+/* The arena selector lives in the existing hangar header; it adds no screen height. */
+.map-choice{display:flex;align-items:center;gap:6px;color:#bfd1c7;font:11px var(--ui);white-space:nowrap}
+.map-choice select{background:#142d38;border:1px solid #6e918a;color:#f1d6a0;border-radius:3px;padding:5px 18px 5px 7px;font:12px var(--ui);cursor:pointer;max-width:112px}
+.map-choice select:focus-visible{outline:2px solid #e5bf7f;outline-offset:2px}
+@media (max-height:460px){.map-choice{font-size:9px;gap:3px}.map-choice select{font-size:10px;padding:2px 12px 2px 4px;max-width:90px}}
+/* Use full finger-size controls on standard landscape phones as well. */
+@media (max-height:460px){
+  body.touch .tbtn{width:44px;height:44px}
+  body.touch .angpad .tbtn{width:44px;height:44px}
+}
+/* Compact landscape phone layout: protect the playable field and 44px touch targets. */
+#ang-compact{display:none}
+@media (max-height:380px) and (max-width:820px){
+  body.touch #console{gap:6px;padding-top:5px;padding-bottom:max(5px,env(safe-area-inset-bottom,0px));grid-template-columns:auto auto minmax(0,1fr) auto}
+  body.touch .c-angle{min-width:44px}
+  body.touch #dial{display:none}
+  body.touch #ang-compact{display:grid;gap:3px;text-align:center;line-height:1.1;color:#f8dfad}
+  #ang-compact small{font:10px var(--ui);color:#a6c8c7;white-space:nowrap}
+  #ang-compact b{font:17px var(--ui);font-variant-numeric:tabular-nums;white-space:nowrap}
+  body.touch .tbtn{min-width:42px;min-height:44px;width:42px;height:44px;border-radius:7px}
+  body.touch .angpad{flex-direction:row;gap:4px}
+  body.touch .angpad .tbtn{width:42px;height:44px}
+  body.touch .c-main{gap:3px}
+  body.touch .card{height:43px;padding:2px 1px}
+  body.touch .card .nm{font-size:11px}
+  body.touch .card .well{width:22px;height:22px}
+  body.touch #btn-fire{width:58px;height:54px;font-size:18px;border-radius:10px}
+  body.touch #gauge{height:16px}
+  body.touch #shot-info{font-size:10px;min-height:12px}
+  #hud-top{gap:3px 5px;padding-top:3px}
+  #minimap{height:24px}
+  #pow-lcd{padding:1px 4px;min-height:0}
+  #pow-lcd b{font-size:13px}
+  #banner{top:85px;font-size:18px;padding:4px 12px;border-radius:4px;border-width:1px;outline:0;animation-duration:.85s}
+  #banner.show{animation:banner .9s ease-out forwards}
+}
+@media (max-height:380px) and (max-width:680px){
+  body.touch #console{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));gap:5px}
+  body.touch .c-move{gap:3px}
+  body.touch .tbtn{width:40px;min-width:40px}
+  body.touch .angpad .tbtn{width:40px}
+  body.touch #btn-fire{width:54px}
+  body.touch #cards{gap:3px}
+  body.touch #pow-lcd{min-width:33px}
+}
 </style>
 </head>
 <body class="in-lobby">
@@ -466,9 +513,10 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
   </div>
   <div class="c-angle">
     <canvas id="dial" aria-label="각도계"></canvas>
+    <div id="ang-compact" aria-live="off"><small>조준각</small><b id="ang-mini">45°</b></div>
     <div class="angle-read">
-      <div class="lcd"><small>포각</small><b id="ang">45°</b></div>
-      <div class="lcd sub"><small>발사각</small><b id="ang-real">45°</b></div>
+      <div class="lcd"><small>조준각</small><b id="ang">45°</b></div>
+      <div class="lcd sub"><small>실제각</small><b id="ang-real">45°</b></div>
       <div class="fuel"><span class="cap">이동</span><div class="fuelbar"><i></i></div></div>
     </div>
   </div>
@@ -482,7 +530,7 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
     <div id="shot-info" aria-label="선택한 포탄과 다음 턴"></div>
   </div>
   <div class="c-fire">
-    <div class="keyhint desk"><button class="key" id="keycap" type="button" aria-label="누르고 있다가 떼면 발사">발사 <small>SPACE</small></button><span>길게 누르고, 놓으면 발사</span><small>←→ 이동 / ↑↓ 각도 / 1~4 포탄<br>C 아이템 / P 턴 넘기기 / T 설정</small></div>
+    <div class="keyhint desk"><button class="key" id="keycap" type="button" aria-label="누르고 있다가 떼면 발사">발사 <small>SPACE</small></button><span>길게 누르고 떼면 발사</span><small>←→ 이동 / ↑↓ 각도 / 1~4 포탄<br>C 아이템 / P 턴 넘기기 / T 설정</small></div>
     <div class="tpad angpad">
       <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
       <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
@@ -514,7 +562,7 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
         <p class="lobby-prompt">모드를 선택하고 전장으로 출격하세요</p>
       </div>
       <section class="hangar" aria-label="탱크 미리보기">
-        <div class="hangar-head"><span class="eyebrow">탱크 미리보기</span></div>
+        <div class="hangar-head"><span class="eyebrow">탱크 미리보기</span><label class="map-choice">전장 <select id="map-choice" aria-label="전장 고르기"><option value="random">무작위</option><option value="frontier">전선</option><option value="canyon">협곡</option><option value="highland">고원</option></select></label></div>
         <div class="tank-stage"><div class="stage-reticle" aria-hidden="true"></div><canvas id="hero-tank" aria-label="선택한 탱크 미리보기"></canvas><div class="stage-floor" aria-hidden="true"></div></div>
         <div class="hangar-caption"><div><span class="eyebrow" id="hero-role">DRILLER</span><h2 id="hero-name">드릴러</h2></div><span class="hero-shell" id="hero-shell">전용탄 · 굴착탄</span></div>
         <p class="hero-desc" id="hero-desc">급경사를 잘 오릅니다. 굴착탄이 지형 속으로 파고듭니다.</p>
@@ -528,8 +576,8 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
 <section id="help" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="sheet help-sheet">
     <div class="pick-head"><div><h2 id="help-title">조작법</h2></div><button class="chip" type="button" id="help-close">닫기</button></div>
-    <ol class="help-steps"><li><b>위치와 각도</b><span>← →로 이동, ↑ ↓로 각도를 조절합니다. 휴대폰에서는 화면 아래 화살표를 누르세요.</span></li><li><b>탄종과 아이템</b><span>포탄 4종 중 하나를 선택합니다. 아이템은 한 턴에 하나, 선택한 포탄에 효과를 더합니다.</span></li><li><b>길게 누르고 발사</b><span>SPACE 또는 발사 버튼을 누르고 있다가 원하는 파워에서 놓으세요. 바람이 탄도를 바꿉니다.</span></li></ol>
-    <ul class="help-rules"><li>상대의 체력을 모두 깎거나 맵 아래로 떨어뜨리면 승리합니다.</li><li>기본 제한 시간은 20초입니다. 충전 중 시간이 끝나면 그 파워로 발사하고, 조준 중이면 턴을 넘깁니다.</li><li>딜레이가 낮은 탱크가 다음 턴을 갖습니다. 포탄·아이템의 딜레이에 조준 시간이 더해지므로, 같은 탱크가 연속으로 쏠 수도 있습니다. 포탄 아래에서 다음 턴을 확인하세요.</li><li>포각은 차체를 기준으로 합니다. 비탈에 서면 수평선 기준 발사각이 달라집니다.</li></ul>
+    <ol class="help-steps"><li><b>위치와 각도</b><span>← →로 이동, ↑ ↓로 각도를 조절합니다. 휴대폰에서는 화면 아래 화살표를 누르세요.</span></li><li><b>탄종과 아이템</b><span>포탄 4종 중 하나를 선택합니다. 아이템은 한 턴에 하나, 선택한 포탄에 효과를 더합니다.</span></li><li><b>길게 누르고 발사</b><span>SPACE 또는 발사 버튼을 누르고 원하는 파워가 되었을 때 떼세요. 짧게 누르면 취소됩니다. 바람이 탄도를 바꿉니다.</span></li></ol>
+    <ul class="help-rules"><li>상대의 체력을 모두 깎거나 맵 아래로 떨어뜨리면 승리합니다.</li><li>기본 제한 시간은 20초입니다. 충전 중 시간이 끝나면 그 파워로 발사하고, 조준 중이면 턴을 넘깁니다.</li><li>남은 딜레이가 낮은 탱크가 다음 턴을 갖습니다. 포탄·아이템의 딜레이에 조준 시간이 더해지므로, 같은 탱크가 연속으로 쏠 수도 있습니다. 포탄 아래에서 다음 턴을 확인하세요.</li><li>조준각은 탱크 차체를 기준으로 표시됩니다. 비탈에 서면 실제 발사각이 달라집니다.</li></ul>
     <p class="help-note">전장을 끌거나 미니맵을 눌러 둘러보세요. 전장을 한 번 누르거나 발사하면 카메라가 돌아옵니다. 포탄을 선택하면 특징이 표시됩니다.</p>
   </div>
 </section>
@@ -588,6 +636,15 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
 const W = 3200, H = 900;
 const FEATURE = 1600;               // terrain and scenery wavelengths are set per this many px, so a wider map gets more hills, not stretched ones
 const VIEW_W = 1100, VIEW_H = 520;  // at zoom 1 the screen shows about this much of the world (the tighter of the two wins)
+const MAPS = [
+  { id: 'frontier', name: '전선', desc: '완만한 능선과 중간 언덕', sky: ['#769caa','#7ea4ad','#88adb1','#94b6b5','#a3c0b8','#b3c9bb','#c4d1bc','#d4d8bf'], scene: ['#82a6a2','#577f7a','#3d6359'] },
+  { id: 'canyon', name: '협곡', desc: '낮은 계곡을 사이에 둔 원거리 포격', sky: ['#9c928c','#ac9c91','#bda99a','#cab5a0','#d4bfa4','#dfc9ae','#e6d3ba','#edddc4'], scene: ['#b7a39a','#957b72','#6e5d58'] },
+  { id: 'highland', name: '고원', desc: '높은 중앙 지형과 급경사 측면', sky: ['#687b99','#748ba7','#8196ac','#91a5b5','#a6b7bd','#bac6c2','#cbd0be','#ded5bb'], scene: ['#8c9fab','#637f91','#476777'] }
+];
+const MAP_BY_ID = Object.fromEntries(MAPS.map(m => [m.id, m]));
+const MAP_KEY = 'shellbound-map-v1';
+let mapChoice = 'random', currentMap = MAPS[0];
+try { const savedMap = localStorage.getItem(MAP_KEY); if (savedMap === 'random' || MAP_BY_ID[savedMap]) mapChoice = savedMap; } catch(e) {}
 const SPAWN_GAP = [850, 1300];      // distance between the two batteries; full power on flat ground carries about 2000
 const KEY = 'tanchak-tuning-v1';
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -646,7 +703,7 @@ const SHELLS = [
 // ang is the barrel range measured from the hull; climb is the highest step (px) it can drive up.
 const MOBILES = [
   { id: 'light', name: '스카우트', desc: '빠르고 멀리 움직이지만 체력이 낮습니다.', hp: 90, fuel: 180, speed: 1.25, climb: 14, delayMul: 0.95, ang: [0, 80], shells: ['basic', 'heavy', 'calm', 'bounce'] },
-  { id: 'armored', name: '타이탄', desc: '튼튼하고 철갑탄이 강력합니다. 이동이 느리고 턴 간격이 깁니다.', hp: 110, fuel: 80, speed: 0.8, climb: 9, delayMul: 1.12, ang: [0, 55], shells: ['basic', 'heavy', 'calm', 'pierce'] },
+  { id: 'armored', name: '타이탄', desc: '튼튼하고 철갑탄이 강력합니다. 기동성은 낮고 발사 후 다음 턴이 늦습니다.', hp: 110, fuel: 80, speed: 0.8, climb: 9, delayMul: 1.12, ang: [0, 55], shells: ['basic', 'heavy', 'calm', 'pierce'] },
   { id: 'howitzer', name: '코멧', desc: '높은 각도로 언덕 너머를 노립니다. 분열탄은 넓게 퍼집니다.', hp: 105, fuel: 110, speed: 1, climb: 11, delayMul: 0.95, ang: [40, 90], shells: ['basic', 'heavy', 'calm', 'split'] },
   { id: 'digger', name: '드릴러', desc: '급경사를 잘 오릅니다. 굴착탄이 지형 속으로 파고듭니다.', hp: 105, fuel: 130, speed: 1, climb: 18, ang: [15, 75], shells: ['basic', 'heavy', 'calm', 'drill'] }
 ];
@@ -664,6 +721,7 @@ const MOBILE_ICONS = {
 // Turn order follows GunBound's delay rule: each action adds delay, every second of thinking adds 10,
 // and whoever has the lower total moves next. Skipping costs less than shooting.
 const PASS_DELAY = 500;
+const MIN_FIRE_POWER = 12;  // a quick tap cancels; it must not launch a zero-speed shell into the shooter
 const TURN_PHASES = ['aim', 'charging', 'aiThink', 'aiMove', 'aiAim', 'aiCharge'];
 const SHELL = Object.fromEntries(SHELLS.map(s => [s.id, s]));
 const SPLIT_SPREAD = [-115, 0, 115];   // sideways speed added to each piece of a split shell
@@ -726,10 +784,14 @@ function hash2(x, y){
 const C = [0, 0, 0];
 // A restrained, stepped palette: grass, dry topsoil, then broad rock strata. Texture is
 // clustered on a 3 px grid; individual collision pixels are still kept at full resolution.
-const SOIL_PALETTE = [[34,65,58], [172,194,119], [111,149,84], [65,105,68], [66,72,53], [167,137,91], [126,106,79], [143,117,83], [113,96,77], [133,110,82]];
+const SOIL_PALETTES = {
+  frontier: [[34,65,58], [172,194,119], [111,149,84], [65,105,68], [66,72,53], [167,137,91], [126,106,79], [143,117,83], [113,96,77], [133,110,82]],
+  canyon: [[83,86,61], [207,177,112], [174,138,84], [153,119,76], [114,88,65], [179,130,96], [151,111,86], [162,117,86], [123,91,75], [145,103,80]],
+  highland: [[36,59,68], [164,188,144], [106,149,130], [73,110,106], [69,77,89], [133,139,140], [98,105,116], [119,121,126], [84,91,108], [101,111,129]]
+};
 function soil(y, depth, wob){
   const band = depth < 2 ? 0 : depth < 6 ? 1 : depth < 11 ? 2 : depth < 17 ? 3 : depth < 26 ? 4 : depth < 54 ? 5 : 6 + Math.floor((y + wob * 7) / 74) % 4;
-  const c = SOIL_PALETTE[band];
+  const c = SOIL_PALETTES[currentMap.id][band];
   const shade = depth > 400 ? 0.68 : depth > 230 ? 0.83 : 1;
   C[0] = c[0] * shade; C[1] = c[1] * shade; C[2] = c[2] * shade;
 }
@@ -740,14 +802,25 @@ function pickSpawns(){
 function genTerrain(spawns){
   const top = new Float32Array(W);
   const a1 = rand(0, 6.28), a2 = rand(0, 6.28), a3 = rand(0, 6.28);
-  // a ridge between the two batteries, plus a few hills and dips scattered over the rest of the map
-  const bumps = [{ x: spawns[0] + (spawns[1] - spawns[0]) * rand(0.4, 0.6), w: rand(128, 224), h: rand(70, 170) }];
+  // Terrain features define different lines of fire, not just different background colors.
+  const center = (spawns[0] + spawns[1]) / 2;
+  const bumps = [];
+  if (currentMap.id === 'canyon'){
+    bumps.push({ x: center, w: rand(165, 235), h: -rand(110, 165) }); // open low valley
+    bumps.push({ x: center - 340, w: 125, h: rand(45, 90) });
+    bumps.push({ x: center + 340, w: 125, h: rand(45, 90) });
+  } else if (currentMap.id === 'highland'){
+    bumps.push({ x: center, w: rand(210, 290), h: rand(135, 180) }); // central plateau
+    bumps.push({ x: center - 410, w: 125, h: rand(-45, 55) });
+    bumps.push({ x: center + 410, w: 125, h: rand(-45, 55) });
+  } else bumps.push({ x: center, w: rand(128, 224), h: rand(70, 170) });
   for (let k = 0, n = Math.round(2 * W / FEATURE); k < n; k++) bumps.push({ x: rand(0, W), w: rand(120, 260), h: rand(-60, 120) });
   for (let x = 0; x < W; x++){
     const t = x / FEATURE;
-    let y = H * 0.55 + Math.sin(t * 6.9 + a1) * 50 + Math.sin(t * 17 + a2) * 24 + Math.sin(t * 40 + a3) * 7;
+    const wave = currentMap.id === 'canyon' ? 0.62 : currentMap.id === 'highland' ? 0.8 : 1;
+    let y = H * 0.55 + Math.sin(t * 6.9 + a1) * 50 * wave + Math.sin(t * 17 + a2) * 24 * wave + Math.sin(t * 40 + a3) * 7 * wave;
     for (const b of bumps) y -= Math.exp(-(((x - b.x) / b.w) ** 2)) * b.h;
-    top[x] = clamp(y, H * 0.3, H * 0.64);
+    top[x] = clamp(y, H * 0.28, H * 0.69);
   }
   for (const sx of spawns){
     let avg = 0, n = 0;
@@ -901,6 +974,7 @@ function checkTerrain(){
 }
 function onResume(){
   if (document.hidden) return;
+  lastT = performance.now(); // returning from a background tab does not consume the paused turn clock
   paintTerrain();
   restoreVisualArt(true);
   Snd.resume();
@@ -975,11 +1049,22 @@ function makeSceneryLayer(L, index){
       }
     }
   } else {
-    const dark = index === 1 ? '#4f7776' : '#355c59', light = index === 1 ? '#648d84' : '#477467';
+    const tints = currentMap.id === 'canyon' ? ['#896e65','#b09578','#685b57','#917b66']
+                : currentMap.id === 'highland' ? ['#526f80','#6b9197','#385c69','#64858c']
+                : ['#4f7776','#648d84','#355c59','#477467'];
+    const dark = index === 1 ? tints[0] : tints[2], light = index === 1 ? tints[1] : tints[3];
     for (let x = 5; x < cv.width - 12; x += 9 + index * 3){
       const n = hash2(x, index * 97), h = Math.round((index === 1 ? 10 : 14) + n * (index === 1 ? 15 : 23));
-      sceneryPine(g, x, ridge[x] + 6, h, dark, light);
-      if (n > 0.67) sceneryPine(g, x + 5, ridge[x + 5] + 7, Math.round(h * 0.7), dark, light);
+      if (currentMap.id === 'canyon'){
+        if (n > 0.57){ // sparse weathered rock spires instead of forest silhouettes
+          const sx = x - 2, sy = ridge[x] + 4, rh = Math.round(h * 0.72);
+          g.fillStyle = dark; g.fillRect(sx, sy - rh, 5 + Math.round(n * 3), rh + 3);
+          g.fillStyle = light; g.fillRect(sx + 1, sy - rh, 2, rh - 2);
+        }
+      } else {
+        sceneryPine(g, x, ridge[x] + 6, h, dark, light);
+        if (n > 0.67) sceneryPine(g, x + 5, ridge[x + 5] + 7, Math.round(h * 0.7), dark, light);
+      }
     }
   }
   if (index === 1){
@@ -1015,10 +1100,11 @@ function buildSkyArt(){
   sg.fillStyle = '#f9efc7'; sg.fillRect(13, 10, 12, 3);
 }
 function genScenery(){
+  const sceneColors = currentMap.scene;
   hills = [
-    { col: '#82a6a2', base: 0.42, amp: 145, f: [3.3, 7.7, 13.4], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.67 },
-    { col: '#577f7a', base: 0.53, amp: 100, f: [3.2, 7.7, 15], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.47 },
-    { col: '#3d6359', base: 0.68, amp: 60, f: [4.4, 9.1, 19], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.25 }
+    { col: sceneColors[0], base: 0.42, amp: 145, f: [3.3, 7.7, 13.4], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.67 },
+    { col: sceneColors[1], base: 0.53, amp: 100, f: [3.2, 7.7, 15], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.47 },
+    { col: sceneColors[2], base: 0.68, amp: 60, f: [4.4, 9.1, 19], ph: [rand(0, 6), rand(0, 6), rand(0, 6)], p: 0.25 }
   ].map(makeSceneryLayer);
   if (!cloudArt) buildSkyArt();
   clouds = Array.from({ length: Math.round(5 * W / FEATURE) }, () => ({ x: rand(-700, W + 700), y: rand(H * 0.05, H * 0.27), s: rand(0.65, 1.25) }));
@@ -1148,7 +1234,7 @@ function hasShell(t, id){ return t.ammo[id] > 0; }
 const PULL_RANGE = 160, PULL_MIN = 100;
 const FX = [
   { id: 'pull', name: '끌어오기', delay: 150, desc: '포탄이 터진 곳 근처의 상대를 내 탱크 옆으로 끌어옵니다.' },
-  { id: 'warp', name: '따라가기', delay: 120, desc: '포탄이 터진 곳 근처로 내 탱크가 이동합니다.' }
+  { id: 'warp', name: '탄착 이동', delay: 120, desc: '포탄이 폭발한 곳 근처의 안전한 지점으로 이동합니다.' }
 ];
 const FXD = Object.fromEntries(FX.map(f => [f.id, f]));
 const FX_DECK = [['pull', 3], ['warp', 3]];
@@ -1178,7 +1264,7 @@ function makeTank(i, x, mid){
   const deck = buildDeck(), hand = [];
   for (let k = 0; k < S.handSize; k++) hand.push(deck.length ? deck.pop() : null);
   return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
-    fuel: m.fuel, ammo, hand, deck, arm: null, hop: null, fresh: -1, freshUntil: 0, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+    fuel: m.fuel, ammo, hand, deck, arm: null, hop: null, fresh: -1, freshUntil: 0, lastHitTurn: -100, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
@@ -1187,7 +1273,9 @@ function isHuman(i){ return !autoAll && (mode !== 'ai' || i === 0); }
 function shooterCanAct(){ return mode !== 'practice' || cur === 0; }
 
 let gamePicks = DEFAULT_PICKS.slice();
-function startGame(m, picks){
+function startGame(m, picks, mapOverride){
+  currentMap = MAP_BY_ID[mapOverride] || (mapChoice === 'random' ? MAPS[(Math.random() * MAPS.length) | 0] : MAP_BY_ID[mapChoice]);
+  $('#minimap').title = '전장: ' + currentMap.name + ' — 누르거나 끌어 다른 곳을 볼 수 있습니다.';
   resetInputs(); clearTimeout(overTimer);
   Snd.chargeStop(); Snd.whistleStop();
   panelEl.hidden = true; $('#panel-shade').hidden = true; $('#help').hidden = true;
@@ -1349,8 +1437,14 @@ function explode(x, y, def, direct, owner, shot){
       shot.pieceHits.set(t, n + 1);
     }
     anyHit = true;
-    if (t !== owner){ hitEnemy = true; bestEnemy = Math.max(bestEnemy, dmg); }
+    const actualDamage = Math.min(t.hp, dmg);
+    if (t !== owner){
+      hitEnemy = true;
+      bestEnemy = Math.max(bestEnemy, actualDamage);
+      if (shot) shot.enemyDamage = (shot.enemyDamage || 0) + actualDamage;
+    }
     t.hp = Math.max(0, t.hp - dmg); t.hurt = 1;
+    if (t !== owner) t.lastHitTurn = turnCount;
     if (J('numbers')) texts.push({ x: cx, y: cy - 42, val: dmg, direct: t === direct, t: 0 });
     if (t.hp <= 0 && t.alive){ t.alive = false; timers.push({ at: 0.35, fn: () => deathBoom(t) }); }
   }
@@ -1359,7 +1453,7 @@ function explode(x, y, def, direct, owner, shot){
     // count each shot once, however many pieces it splits into
     if (shot && hitEnemy && !shot.hit){ shot.hit = true; s.hits++; }
     if (shot && direct && direct !== owner && !shot.direct){ shot.direct = true; s.direct++; }
-    if (hitEnemy) s.best = Math.max(s.best, bestEnemy);
+    if (hitEnemy) s.best = Math.max(s.best, shot ? shot.enemyDamage : bestEnemy);
   }
   const big = def.r / 38;
   if (J('particles')) spawnBlast(x, y, big, !!direct);
@@ -1593,20 +1687,37 @@ function* planJob(t, mayMove, force){
   const target = tanks[1 - t.i], smart = S.aiSkill >= AI_SMART;
   const hand = Object.keys(t.ammo).filter(id => t.ammo[id] > 0).sort((a, b) => (a === 'basic' ? -1 : b === 'basic' ? 1 : 0));
   let stuck = false;
-  // 1. with no clean shot from here, look for a spot within reach that has one
-  if (smart && mayMove && t.fuel > 10){
+  // 1. Reposition to open a firing line, or to get out of the enemy's last impact zone.
+  //    Scout and Driller use their mobility more often; Titan usually holds its firing position.
+  //    A retreat is accepted only if an accurate shot remains possible after moving.
+  if (smart && mayMove && t.fuel > 35 && !t.airborne){
     const here = yield* searchShot(t, SHELL.basic, target, true);
-    if (here.d > 12){
-      let best = { d: here.d, x: t.x };
-      for (const dx of [-30, 30, -60, 60, -100, 100, -150, 150]){
+    const underFire = t.lastHitTurn >= turnCount - 2 && t.hp < t.maxHp;
+    const roamChance = { light: 0.38, digger: 0.22, howitzer: 0.12, armored: 0.035 }[t.m.id] || 0;
+    const tactical = S.aiSkill >= 0.55 && (underFire || Math.random() < roamChance * S.aiSkill);
+    if (here.d > 12 || tactical){
+      let best = { d: here.d, x: t.x, score: here.d > 12 ? here.d : 0 };
+      const beforeRange = Math.abs(t.x - target.x);
+      const shifts = [-40, 40, -75, 75, -115, 115, -150, 150];
+      for (const dx of shifts){
         if (Math.abs(dx) > t.fuel) continue;
         const p = driveTo(t, t.x + dx);
-        if (Math.abs(p.x - t.x) < 15) continue;
+        const moved = Math.abs(p.x - t.x);
+        if (moved < 26 || p.y >= H - 35) continue;
         const r = yield* searchShot(Object.assign({}, t, { x: p.x, y: p.y, tilt: tiltAt(p.x, p.y) }), SHELL.basic, target, true);
-        if (r.d < best.d - 10) best = { d: r.d, x: p.x };
+        if (!Number.isFinite(r.d) || r.d > 1e7) continue;
+        if (here.d <= 12 && r.d > 18) continue; // do not escape into a position unable to hit
+        const altitudeGain = clamp(t.y - p.y, -70, 70);
+        const rangeGain = clamp(Math.abs(p.x - target.x) - beforeRange, -150, 150);
+        const tacticalGain = altitudeGain * 0.16 + rangeGain * 0.085;
+        // Accuracy dominates when blocked. Otherwise moving away from the last hit,
+        // while maintaining the shot, can beat remaining stationary.
+        const score = here.d > 12 ? r.d - tacticalGain * 0.1 : r.d * 0.45 - tacticalGain;
+        if (score < best.score - (here.d > 12 ? 6 : 2) && (here.d > 12 || tacticalGain > 5))
+          best = { d: r.d, x: p.x, score };
       }
-      if (best.x !== t.x) return { move: best.x, missHere: here.d, missThere: best.d };
-      stuck = true;   // no clean shot here and none within driving reach
+      if (best.x !== t.x) return { move: best.x, reason: underFire ? '회피 이동' : here.d > 12 ? '사격 위치 변경' : '유리한 지형 확보', missHere: here.d, missThere: best.d };
+      stuck = here.d > 12;
     }
   }
   // 2. the shell: easy picks like a beginner, otherwise the best value
@@ -1646,7 +1757,7 @@ function planShot(t, mayMove, force){
 /* ---------- input ---------- */
 const panelEl = $('#panel');
 function gamePaused(){ return (!manualTestMode && document.hidden) || !panelEl.hidden || !$('#help').hidden || !$('#rotate').hidden; }
-function canControl(){ return !gamePaused() && tanks[cur]?.alive && !tanks[cur].gone && (phase === 'aim' || phase === 'charging') && isHuman(cur) && shooterCanAct(); }
+function canControl(){ return !gamePaused() && tanks[cur]?.alive && !tanks[cur].gone && !tanks[cur].airborne && (phase === 'aim' || phase === 'charging') && isHuman(cur) && shooterCanAct(); }
 function pressFire(source){
   if (!canControl() || phase !== 'aim') return false;
   fireSource = source;
@@ -1657,7 +1768,13 @@ function pressFire(source){
 function releaseFire(source){
   if (fireSource !== source) return;
   fireHeld = false; fireSource = null;
-  if (phase === 'charging' && canControl()) fire(tanks[cur], power);
+  if (phase !== 'charging' || !canControl()) return;
+  if (power < MIN_FIRE_POWER){
+    cancelFire();
+    toast('발사 버튼을 조금 더 길게 눌러 주세요', 1700);
+    return;
+  }
+  fire(tanks[cur], power);
 }
 function cancelFire(source){
   if (source !== undefined && fireSource !== source) return;
@@ -1693,6 +1810,7 @@ function setHold(k, on, source = 'key'){
 const GAME_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'];
 const keycap = $('#keycap');
 window.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
   if (e.code === 'KeyT' && !e.repeat && $('#help').hidden && $('#rotate').hidden && !e.target?.closest?.('input,textarea,select')){
     e.preventDefault(); togglePanel(); return;
   }
@@ -1826,7 +1944,7 @@ function selectCard(id){
 }
 
 /* ---------- update ---------- */
-function update(rdt){
+function update(rdt, clockDelta = rdt){
   if (gamePaused()){ Snd.chargeStop(); Snd.whistleStop(); Snd.rumble(false); return; }
   if (phase === 'charging' || phase === 'aiCharge') Snd.chargeStart();
   if (phase === 'flying' && shells.length) Snd.whistleStart();
@@ -1851,10 +1969,11 @@ function update(rdt){
   const dt = rdt * timeScale;
 
   updateScenery(rdt);
-  updateControl(dt, rdt);
+  updateControl(dt, rdt, clockDelta);
   updateShells(dt);
   for (const t of tanks) updateTank(t, dt);
   // A tank can fall out while aiming or driving, without a shell to start settling.
+  if (phase === 'charging' && tanks[cur]?.airborne) cancelFire();
   if (TURN_PHASES.includes(phase) && tanks.some(t => !t.alive)){
     resetInputs(); aiJob = null; phase = 'settle'; settleT = 0;
   }
@@ -1875,10 +1994,10 @@ function update(rdt){
   }
   updateCamera(rdt);
 }
-function updateControl(dt, rdt){
+function updateControl(dt, rdt, clockDelta = rdt){
   const t = tanks[cur];
   if (!t) return;
-  if (TURN_PHASES.includes(phase) && panelEl.hidden) turnT += rdt;
+  if (TURN_PHASES.includes(phase) && panelEl.hidden) turnT += Math.max(0, clockDelta);
   if (timed() && isHuman(cur) && (phase === 'aim' || phase === 'charging')){
     const left = S.turnTime - turnT, sec = Math.ceil(left);
     if (sec <= 5 && sec >= 1 && sec !== tickSec){ tickSec = sec; Snd.tick(1.4); if (sec <= 3) buzz(15); }
@@ -2192,7 +2311,7 @@ function render(){
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.imageSmoothingEnabled = false;
   // A small set of sky bands replaces the glossy vector gradient.
-  const sky = ['#769caa', '#7ea4ad', '#88adb1', '#94b6b5', '#a3c0b8', '#b3c9bb', '#c4d1bc', '#d4d8bf'];
+  const sky = currentMap.sky;
   for (let i = 0; i < sky.length; i++){ ctx.fillStyle = sky[i]; ctx.fillRect(0, Math.floor(ch * i / sky.length), cw, Math.ceil(ch / sky.length) + 1); }
 
   const { s, sx, sy, rot } = worldTransform();
@@ -2700,7 +2819,7 @@ function drawDial(t){
   if (real !== Math.round(t.elev)){
     dctx.font = `700 ${Math.max(9 * k, Math.round(R * 0.19))}px 'IBM Plex Sans KR', sans-serif`;
     dctx.fillStyle = 'rgba(246,239,220,.85)';
-    dctx.fillText('실제 ' + real + '°', nx0, cy - R * 0.58);
+    dctx.fillText('수평 ' + real + '°', nx0, cy - R * 0.58);
   }
 }
 
@@ -2711,7 +2830,7 @@ const hud = {
   hp: [0, 1].map(i => ({ box: $('#hp' + i), bar: $(`#hp${i} .hpbar i`), ghost: $(`#hp${i} .hpbar b`), num: $(`#hp${i} .hpnum`), dly: $(`#hp${i} .dly`) })),
   timer: $('#timer'), timerNum: $('#timer b'), pass: $('#btn-pass'),
   windSvg: $('#wind svg'), windNum: $('#wind .lcd b'),
-  fill: $('#gauge .fill'), prev: $('#gauge .prev'), ang: $('#ang'), angReal: $('#ang-real'), pow: $('#pow'), fuel: $('.fuelbar i'),
+  fill: $('#gauge .fill'), prev: $('#gauge .prev'), ang: $('#ang'), angMini: $('#ang-mini'), angReal: $('#ang-real'), pow: $('#pow'), fuel: $('.fuelbar i'),
   touchBtns: [...document.querySelectorAll('.tpad button, #btn-fire')]
 };
 const last = {};
@@ -2785,7 +2904,7 @@ function updateHUD(){
     if (t.lastPower !== null) hud.prev.style.left = t.lastPower + '%';
   });
   const real = Math.round(worldElev(t, t.facing, t.elev));
-  setIf('ang', Math.round(t.elev) + (t.facing > 0 ? '→' : '←'), v => { hud.ang.textContent = v.replace(/(\d+)/, '$1°'); });
+  setIf('ang', Math.round(t.elev) + (t.facing > 0 ? '→' : '←'), v => { hud.ang.textContent = v.replace(/(\d+)/, '$1°'); hud.angMini.textContent = v.replace(/(\d+)/, '$1°'); });
   setIf('real', real, v => { hud.angReal.textContent = v + '°'; });
   setIf('fuel', Math.round(t.fuel) + '/' + t.m.fuel, () => { hud.fuel.style.width = (t.fuel / t.m.fuel * 100) + '%'; });
   const key = [cur, t.m.id, Math.round(t.elev * 2), Math.round((t.tilt || 0) * 200), t.facing, t.lastElev, t.lastFacing, dialC.width].join('|');
@@ -3219,6 +3338,13 @@ $('#hangar-tabs').addEventListener('click', e => {
   Snd.init(); Snd.tick(0.4); renderLobby();
 });
 $('#lobby-settings').addEventListener('click', () => togglePanel(true));
+$('#map-choice').addEventListener('change', e => {
+  const value = e.target.value;
+  if (value !== 'random' && !MAP_BY_ID[value]) return;
+  mapChoice = value;
+  try { localStorage.setItem(MAP_KEY, value); } catch(err) {}
+  Snd.tick(0.3);
+});
 let helpFocus = null;
 function openHelp(){ helpFocus = document.activeElement; resetInputs(); $('#help').hidden = false; $('#help-close').focus(); }
 $('#lobby-help').addEventListener('click', openHelp);
@@ -3266,12 +3392,12 @@ function renderPick(){
   box.innerHTML = MOBILES.map(m => {
     const own = SHELL[m.shells[m.shells.length - 1]];
     const shortRole = { light: '빠른 이동 · 낮은 체력', armored: '튼튼한 장갑 · 강한 직격', howitzer: '고각 사격 · 분열탄', digger: '급경사 이동 · 굴착탄' }[m.id];
-    return `<button class="mob${lastPicks[pickStep] === m.id ? ' last' : ''}" type="button" data-mob="${m.id}" aria-label="${m.name}. ${m.desc} 체력 ${m.hp}, 이동력 ${m.fuel}, 포각 ${m.ang[0]}~${m.ang[1]}도, 딜레이 배율 ${m.delayMul || 1}, 전용탄 ${own.name}">
+    return `<button class="mob${lastPicks[pickStep] === m.id ? ' last' : ''}" type="button" data-mob="${m.id}" aria-label="${m.name}. ${m.desc} 체력 ${m.hp}, 이동력 ${m.fuel}, 조준각 ${m.ang[0]}~${m.ang[1]}도, 딜레이 배율 ${m.delayMul || 1}, 전용탄 ${own.name}">
       <span class="mob-code">${LOBBY_META[m.id][1]}</span><canvas aria-hidden="true"></canvas><b>${m.name}</b><span class="role">${m.desc}</span><span class="role-short" aria-hidden="true">${shortRole}</span>
       <dl><dt>체력</dt><dd><span class="bar"><i style="width:${Math.round(m.hp / topHp * 100)}%"></i></span>${m.hp}</dd>
       <dt>이동력</dt><dd><span class="bar"><i style="width:${Math.round(m.fuel / topFuel * 100)}%"></i></span>${m.fuel}</dd>
-      <dt>포각</dt><dd>${m.ang[0]}~${m.ang[1]}°</dd>
-      <dt>턴 간격</dt><dd>${(m.delayMul || 1) === 1 ? '보통' : (m.delayMul < 1 ? '짧은 편' : '긴 편')}</dd>
+      <dt>조준각</dt><dd>${m.ang[0]}~${m.ang[1]}°</dd>
+      <dt>딜레이</dt><dd>${(m.delayMul || 1) === 1 ? '보통' : (m.delayMul < 1 ? '짧은 편' : '긴 편')}</dd>
       <dt>전용</dt><dd>${own.name}</dd></dl><span class="deploy-line">선택하여 출격 <span aria-hidden="true">▶</span></span></button>`;
   }).join('');
   requestAnimationFrame(() => box.querySelectorAll('.mob').forEach(b => drawPreview(b.querySelector('canvas'), b.dataset.mob, pickStep)));
@@ -3371,8 +3497,8 @@ document.addEventListener('webkitfullscreenchange', syncFull);
 let lastT = performance.now();
 let manualTestMode = false;
 function frame(now){
-  const rdt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-  if (!manualTestMode){ checkTerrain(); update(rdt); render(); drawMinimap(now); updateHUD(); noteLatency(); }
+  const elapsed = Math.max(0, (now - lastT) / 1000), rdt = Math.min(0.05, elapsed); lastT = now;
+  if (!manualTestMode){ checkTerrain(); update(rdt, elapsed); render(); drawMinimap(now); updateHUD(); noteLatency(); }
   requestAnimationFrame(frame);
 }
 function start(data){
@@ -3386,6 +3512,8 @@ function start(data){
     ro.observe($('#console')); ro.observe($('#hud-top')); ro.observe(mm);
   }
   // idle scene behind the start menu
+  currentMap = MAP_BY_ID[mapChoice] || MAPS[0];
+  $('#map-choice').value = mapChoice;
   const sx = pickSpawns(); genTerrain(sx); genScenery();
   tanks = [makeTank(0, sx[0], randomMobile()), makeTank(1, sx[1], randomMobile())]; tanks.forEach(t => t.y = groundY(t.x, 0));
   setBadges();
@@ -3402,12 +3530,10 @@ if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planS
   toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
   setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; }, lat,
   setAmmo: (t, ids) => { t.ammo = { basic: Infinity }; for (const id of ids) t.ammo[id] = (t.ammo[id] || 0) + 1; },
-  standAt, applyFx, toggleFxPop, armFx, FXD, Snd,
+  standAt, applyFx, toggleFxPop, armFx, FXD, explode, Snd, MAPS, map: () => currentMap.id, setMapChoice: id => { if (id === 'random' || MAP_BY_ID[id]) mapChoice = id; },
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
-// The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.
-window.claude?.hot?.snapshot?.(() => ({ settings: S }));
-window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+start({});
 })();
 </script>
 </body>
