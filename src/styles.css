@@ -353,7 +353,7 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
 .pixel-cross{display:inline-block;width:17px;height:17px;position:relative;border:2px solid #d4bc8b;box-shadow:inset 0 0 0 3px #0c2430}.pixel-cross::after{content:'';position:absolute;left:5px;top:5px;width:3px;height:3px;background:#d4bc8b}
 .lobby-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:clamp(32px,7vw,110px)}
 .lobby-copy{padding:14px 0}.lobby-copy>.eyebrow{font-family:var(--ui);font-size:13px;letter-spacing:.17em;color:#d4dfcd;display:flex;align-items:center;gap:10px;margin-bottom:21px}
-.title{font-size:clamp(38px,5.1vw,74px);line-height:1;white-space:nowrap;color:#f7d69b;-webkit-text-stroke:0;letter-spacing:-.045em;text-shadow:0 6px 0 #9d7549,5px 6px 0 #071a27,6px 10px 0 #071a27;margin:0}
+.title{font-size:clamp(46px,6.6vw,92px);line-height:1;white-space:nowrap;color:#f7d69b;-webkit-text-stroke:0;letter-spacing:.02em;text-shadow:0 6px 0 #9d7549,5px 6px 0 #071a27,6px 10px 0 #071a27;margin:0}
 .title>span{display:block;font:17px/1 var(--ui);letter-spacing:.36em;color:#8daaa9;text-shadow:none;margin:22px 0 0 4px}.tagline{font:18px/1.5 var(--ui);letter-spacing:.02em;color:#d5ded3;margin:25px 0 28px}
 .lobby-copy .modes{gap:11px}.lobby-copy .mode{display:grid;grid-template-columns:30px minmax(0,1fr) 20px;align-items:center;gap:17px;padding:15px 17px;background:#1b3441e8;border-color:#526e75;min-height:72px}.lobby-copy .mode.primary{background:#f3c676;border-color:#ffe6af}.lobby-copy .mode.primary:hover{background:#ffda94}.lobby-copy .mode:hover{transform:translateX(4px)}
 .mode .mode-index{font:700 14px var(--mono);color:#9bb4b7;align-self:start;padding-top:5px}.mode.primary .mode-index{color:#7a633c}.mode .mode-copy{display:grid;gap:5px}.mode .mode-copy b{font-size:24px;line-height:1}.mode .mode-copy>span{font-size:11px;color:#b0c1c2}.mode.primary .mode-copy>span{color:#5d533d}.mode .mode-arrow{font-size:11px;color:#c7cfc0}.mode.primary .mode-arrow{color:#30382c}
@@ -444,7 +444,8 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
   #banner.show{animation:banner .9s ease-out forwards}
 }
 @media (max-height:380px) and (max-width:680px){
-  body.touch #console{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));gap:5px}
+  /* keep the 44px side margins even here: buttons at the very edge turn presses into Android's back swipe */
+  body.touch #console{padding-left:max(44px,calc(env(safe-area-inset-left,0px) + 24px));padding-right:max(44px,calc(env(safe-area-inset-right,0px) + 24px));gap:5px}
   body.touch .c-move{gap:3px}
   body.touch .tbtn{width:40px;min-width:40px}
   body.touch .angpad .tbtn{width:40px}

@@ -1,4 +1,4 @@
-"""SHELLBOUND targeted quality checks. Uses Chromium and an inline copy of the released HTML.
+"""탄착점 targeted quality checks. Uses Chromium and an inline copy of the released HTML.
 Set CHROME=/path/to/chrome to use an existing browser binary.
 """
 from pathlib import Path
@@ -21,7 +21,7 @@ with sync_playwright() as p:
     page.set_content(html,wait_until='domcontentloaded'); page.wait_for_timeout(300)
     fn=f'{w}x{h}-'+('touch' if touch else 'desktop')
     if (w,h)==(1280,720):
-      check('name and tank roster',page.title().startswith('SHELLBOUND') and page.evaluate('window.__tc.MOBILES.map(x=>x.name)')==['스카우트','타이탄','코멧','드릴러'])
+      check('name and tank roster',page.title().startswith('탄착점') and page.evaluate('window.__tc.MOBILES.map(x=>x.name)')==['스카우트','타이탄','코멧','드릴러'])
     check('map selector exists '+fn, page.locator('#map-choice option').count()==4)
     page.locator('#map-choice').select_option('canyon')
     page.locator('[data-mode="ai"]').click()

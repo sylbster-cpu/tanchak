@@ -1,6 +1,6 @@
-# SHELLBOUND (셸바운드)
+# 탄착점 (TANCHAK)
 
-바람을 읽고, 한 발로 뒤집다. **SHELLBOUND**는 지형을 파괴하며 각도와 파워를 조절해 대결하는 레트로 턴제 포격 게임입니다. PC와 휴대폰 브라우저에서 별도 설치 없이 실행할 수 있습니다.
+바람을 읽고, 한 발로 뒤집다. **탄착점**은 지형을 파괴하며 각도와 파워를 조절해 대결하는 레트로 턴제 포격 게임입니다. PC와 휴대폰 브라우저에서 별도 설치 없이 실행할 수 있습니다.
 
 **플레이:** https://sylbster-cpu.github.io/tanchak/
 
@@ -45,7 +45,7 @@ python scripts/build.py --check
 작업 환경에 Python 3과 Playwright/Chromium이 있으면 다음 검사를 실행할 수 있습니다.
 
 ```sh
-python tests/qa_shellbound.py
+python tests/qa_tanchak.py
 python tests/soak_quality.py 150000
 ```
 

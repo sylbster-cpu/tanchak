@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = (ROOT / 'src' / 'index.template.html').read_text(encoding='utf-8')
 STYLES = (ROOT / 'src' / 'styles.css').read_text(encoding='utf-8')
 GAME = (ROOT / 'src' / 'game.js').read_text(encoding='utf-8')
-assert TEMPLATE.count('<!-- SHELLBOUND:CSS -->') == 1
-assert TEMPLATE.count('<!-- SHELLBOUND:JS -->') == 1
-built = TEMPLATE.replace('<!-- SHELLBOUND:CSS -->', '<style>' + STYLES + '</style>')
-built = built.replace('<!-- SHELLBOUND:JS -->', '<script>' + GAME + '</script>')
+assert TEMPLATE.count('<!-- TANCHAK:CSS -->') == 1
+assert TEMPLATE.count('<!-- TANCHAK:JS -->') == 1
+built = TEMPLATE.replace('<!-- TANCHAK:CSS -->', '<style>' + STYLES + '</style>')
+built = built.replace('<!-- TANCHAK:JS -->', '<script>' + GAME + '</script>')
 output = ROOT / 'index.html'
 if '--check' in sys.argv:
     if not output.exists() or output.read_text(encoding='utf-8') != built:

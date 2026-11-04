@@ -212,14 +212,19 @@ with sync_playwright() as p:
       T.S().aiSkill=s0;T.S().turnTime=tt;return out;})()""")
     check("computer lands each mobile's own shell at full skill", all(v["hits"] >= 4 for v in r.values()), r)
 
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['light','light']);for(let i=0;i<60;i++)T.update(1/60);
-      const g=T.get(),a=g.tanks[0];a.sel='bounce';a.facing=1;a.elev=12;const ops0=g.ops.length;T.fire(a,55);
-      let bounceAt=null,boom=null;for(let i=0;i<600;i++){T.update(1/60);const s=T.get().shells[0];
-        if(s&&s.bounced&&!bounceAt)bounceAt=[Math.round(s.x),Math.round(s.y)];
-        const o=T.get().ops.slice(ops0).find(o=>o.scorch);if(o&&!boom)boom=[Math.round(o.cx),Math.round(o.cy)];if(T.get().phase!=='flying')break;}
-      T.S().turnTime=20; return {bounceAt,boom,blasts:T.get().ops.slice(ops0).filter(o=>o.scorch).length};})()""")
+    # A low bounce shot over a few random maps: each burst happens once, and at least one lands well past the bounce.
+    # (On a single map a bounce into a rising slope can burst right next to where it bounced, so one try is not enough.)
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
+      for(let k=0;k<5;k++){T.startGame('duo',['light','light']);for(let i=0;i<60;i++)T.update(1/60);
+        const g=T.get(),a=g.tanks[0];a.sel='bounce';a.facing=1;a.elev=12;const ops0=g.ops.length;T.fire(a,55);
+        let bounceAt=null,boom=null;for(let i=0;i<600;i++){T.update(1/60);const s=T.get().shells[0];
+          if(s&&s.bounced&&!bounceAt)bounceAt=[Math.round(s.x),Math.round(s.y)];
+          const o=T.get().ops.slice(ops0).find(o=>o.scorch);if(o&&!boom)boom=[Math.round(o.cx),Math.round(o.cy)];if(T.get().phase!=='flying')break;}
+        out.push({bounceAt,boom,blasts:T.get().ops.slice(ops0).filter(o=>o.scorch).length});}
+      T.S().turnTime=20; return out;})()""")
+    bounced = [o for o in r if o["bounceAt"]]
     check("bounce shell: bounces once, then bursts somewhere else",
-          r["bounceAt"] is not None and r["blasts"] == 1 and abs(r["boom"][0] - r["bounceAt"][0]) > 20, r)
+          bounced and all(o["blasts"] == 1 for o in r) and any(abs(o["boom"][0] - o["bounceAt"][0]) > 20 for o in bounced), r)
 
     r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
       for(let k=0;k<10&&out.length<2;k++){T.startGame('duo',['armored','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];b.x=a.x+260;b.y=0;for(let i=0;i<90;i++)T.update(1/60);
@@ -241,10 +246,10 @@ with sync_playwright() as p:
     pg.click(".mob[data-mob=armored]"); time.sleep(0.1)
     pg.click(".mob[data-mob=howitzer]"); time.sleep(0.3)
     r = ev("""(()=>{const g=window.__tc.get();return {mode:g.mode,phase:g.phase,mobs:g.tanks.map(t=>t.m.id),pick:!document.getElementById('pick').hidden,
-      saved:localStorage.getItem('tanchak-mobile-v1'),badge:document.querySelector('#hp0 .badge').title};})()""")
+      saved:localStorage.getItem('tanchak-mobile-v1'),badge:document.querySelector('#hp0 .badge').title,armoredName:window.__tc.MOBILES.find(m=>m.id==='armored').name};})()""")
     check("picker: 1P then 2P, back steps back, choices start the game and are remembered",
           t1 == "1P 탱크 고르기" and t2 == "2P 탱크 고르기" and t3 == "1P 탱크 고르기" and r["mobs"] == ["armored", "howitzer"]
-          and not r["pick"] and r["saved"] == '["armored","howitzer"]' and r["badge"] == "중전차",
+          and not r["pick"] and r["saved"] == '["armored","howitzer"]' and r["badge"] == r["armoredName"],
           {"titles": [t1, t2, t3], **r})
     ev("document.getElementById('btn-menu').click()"); time.sleep(0.2)
     pg.click("[data-mode=ai]"); time.sleep(0.2)
@@ -295,7 +300,7 @@ with sync_playwright() as p:
       T.setHand(a,['pull','warp']);T.renderCards();
       const k=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));
       k('KeyC');const open=!document.getElementById('fxpop').hidden;const cards=document.querySelectorAll('#fxpop .fxcard').length;
-      document.querySelector('#fxpop [data-fx="1"]').click();const armed=a.arm,closed=document.getElementById('fxpop').hidden,btn=document.getElementById('fx-btn').textContent.includes('따라가기');
+      document.querySelector('#fxpop [data-fx="1"]').click();const armed=a.arm,closed=document.getElementById('fxpop').hidden,btn=document.getElementById('fx-btn').textContent.includes(T.FXD.warp.name);
       k('Digit6');const off=a.arm;k('Digit5');const pulled=a.arm;k('Digit2');const shell=a.sel;
       T.S().turnTime=20;return {open,cards,armed,closed,btn,off,pulled,shell};})()""")
     check("card button: C opens the hand, a tap arms a card, 5-6 toggle cards, 1-4 still pick shells",
@@ -328,10 +333,15 @@ with sync_playwright() as p:
         const log=T.aiLog().slice(-2),mv=log.find(l=>l.move!==undefined),shot=log[log.length-1];
         out.push({moved:!!mv,toward:mv?Math.sign(mv.move-x0)===side:null,dx:Math.round(ai.x-x0),here:mv&&Math.round(mv.missHere),there:mv&&Math.round(mv.missThere),miss:Math.round(shot.miss)});}
       S.windMax=wm;S.turnTime=tt;S.aiSkill=sk;return out;})()""")
+    # Blocked (no clean shot here): it must drive toward the player and end up with a better shot.
+    # Tactical moves (it already had a shot; added later for dodging and better ground) must keep a clean shot.
     moved = [o for o in r if o["moved"]]
-    check("computer drives toward the player when it has no clean shot from where it stands",
-          moved and all(o["toward"] and abs(o["dx"]) >= 15 and o["there"] < o["here"] for o in moved) and all(o["moved"] or o["miss"] <= 12 for o in r),
-          {"moved": len(moved), "cases": r})
+    blocked = [o for o in moved if o["here"] > 12]
+    tactical = [o for o in moved if o["here"] <= 12]
+    check("computer drives toward the player when blocked, and never moves to a spot it cannot hit from",
+          blocked and all(o["toward"] and abs(o["dx"]) >= 15 and o["there"] < o["here"] for o in blocked)
+          and all(o["there"] <= 18 for o in tactical) and all(o["moved"] or o["miss"] <= 12 for o in r),
+          {"blocked": len(blocked), "tactical": len(tactical), "cases": r})
 
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),wm=S.windMax,tt=S.turnTime,sk=S.aiSkill;S.windMax=0;S.turnTime=0;S.aiSkill=0.85;const res=[];
       for(let k=0;k<20&&res.length<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];me.x=ai.x-420;me.y=0;for(let i=0;i<120;i++)T.update(1/60);

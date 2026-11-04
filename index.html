@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>SHELLBOUND — 셸바운드</title>
-<meta name="description" content="바람을 읽고, 한 발로 뒤집다. PC와 휴대폰으로 즐기는 레트로 턴제 포격 게임 SHELLBOUND(셸바운드).">
+<title>탄착점</title>
+<meta name="description" content="바람을 읽고, 한 발로 뒤집다. PC와 휴대폰으로 즐기는 레트로 턴제 포격 게임 탄착점.">
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -364,7 +364,7 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
 .pixel-cross{display:inline-block;width:17px;height:17px;position:relative;border:2px solid #d4bc8b;box-shadow:inset 0 0 0 3px #0c2430}.pixel-cross::after{content:'';position:absolute;left:5px;top:5px;width:3px;height:3px;background:#d4bc8b}
 .lobby-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:clamp(32px,7vw,110px)}
 .lobby-copy{padding:14px 0}.lobby-copy>.eyebrow{font-family:var(--ui);font-size:13px;letter-spacing:.17em;color:#d4dfcd;display:flex;align-items:center;gap:10px;margin-bottom:21px}
-.title{font-size:clamp(38px,5.1vw,74px);line-height:1;white-space:nowrap;color:#f7d69b;-webkit-text-stroke:0;letter-spacing:-.045em;text-shadow:0 6px 0 #9d7549,5px 6px 0 #071a27,6px 10px 0 #071a27;margin:0}
+.title{font-size:clamp(46px,6.6vw,92px);line-height:1;white-space:nowrap;color:#f7d69b;-webkit-text-stroke:0;letter-spacing:.02em;text-shadow:0 6px 0 #9d7549,5px 6px 0 #071a27,6px 10px 0 #071a27;margin:0}
 .title>span{display:block;font:17px/1 var(--ui);letter-spacing:.36em;color:#8daaa9;text-shadow:none;margin:22px 0 0 4px}.tagline{font:18px/1.5 var(--ui);letter-spacing:.02em;color:#d5ded3;margin:25px 0 28px}
 .lobby-copy .modes{gap:11px}.lobby-copy .mode{display:grid;grid-template-columns:30px minmax(0,1fr) 20px;align-items:center;gap:17px;padding:15px 17px;background:#1b3441e8;border-color:#526e75;min-height:72px}.lobby-copy .mode.primary{background:#f3c676;border-color:#ffe6af}.lobby-copy .mode.primary:hover{background:#ffda94}.lobby-copy .mode:hover{transform:translateX(4px)}
 .mode .mode-index{font:700 14px var(--mono);color:#9bb4b7;align-self:start;padding-top:5px}.mode.primary .mode-index{color:#7a633c}.mode .mode-copy{display:grid;gap:5px}.mode .mode-copy b{font-size:24px;line-height:1}.mode .mode-copy>span{font-size:11px;color:#b0c1c2}.mode.primary .mode-copy>span{color:#5d533d}.mode .mode-arrow{font-size:11px;color:#c7cfc0}.mode.primary .mode-arrow{color:#30382c}
@@ -455,7 +455,8 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
   #banner.show{animation:banner .9s ease-out forwards}
 }
 @media (max-height:380px) and (max-width:680px){
-  body.touch #console{padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));gap:5px}
+  /* keep the 44px side margins even here: buttons at the very edge turn presses into Android's back swipe */
+  body.touch #console{padding-left:max(44px,calc(env(safe-area-inset-left,0px) + 24px));padding-right:max(44px,calc(env(safe-area-inset-right,0px) + 24px));gap:5px}
   body.touch .c-move{gap:3px}
   body.touch .tbtn{width:40px;min-width:40px}
   body.touch .angpad .tbtn{width:40px}
@@ -552,7 +553,7 @@ body.in-lobby #hud-top,body.in-lobby #console{visibility:hidden;pointer-events:n
     <div class="lobby-main">
       <div class="lobby-copy">
         <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> 포격 준비 완료</p>
-        <h1 class="title">SHELLBOUND<span>셸바운드</span></h1>
+        <h1 class="title">탄착점<span>TANCHAK</span></h1>
         <p class="tagline">바람을 읽고, 한 발로 뒤집다.</p>
         <div class="modes">
           <button class="mode primary" type="button" data-mode="ai"><span class="mode-copy"><b>AI 대전</b><span>컴퓨터와 1 대 1 포격전</span></span><span class="mode-arrow" aria-hidden="true">▶</span></button>
@@ -642,7 +643,7 @@ const MAPS = [
   { id: 'highland', name: '고원', desc: '높은 중앙 지형과 급경사 측면', sky: ['#687b99','#748ba7','#8196ac','#91a5b5','#a6b7bd','#bac6c2','#cbd0be','#ded5bb'], scene: ['#8c9fab','#637f91','#476777'] }
 ];
 const MAP_BY_ID = Object.fromEntries(MAPS.map(m => [m.id, m]));
-const MAP_KEY = 'shellbound-map-v1';
+const MAP_KEY = 'shellbound-map-v1';   // key from before the name went back to 탄착점; kept so the saved choice survives
 let mapChoice = 'random', currentMap = MAPS[0];
 try { const savedMap = localStorage.getItem(MAP_KEY); if (savedMap === 'random' || MAP_BY_ID[savedMap]) mapChoice = savedMap; } catch(e) {}
 const SPAWN_GAP = [850, 1300];      // distance between the two batteries; full power on flat ground carries about 2000
@@ -1571,8 +1572,9 @@ function simulate(t, facing, rel, p, def, target){
 // How close a shell from this state lands to the target (0 = direct hit), following updateShells' rules.
 // A split shell follows all three pieces from the top of its arc and scores the closest one.
 function flight(t, x, y, vx, vy, def, target, age){
-  // a bounce depends on exactly where the shell meets the ground, so that shell is stepped like the real one (1/240 s)
-  const h = def.bounce ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
+  // A bounce depends on exactly where the shell meets the ground, and split pieces fall a long way from where they part;
+  // both are stepped like the real shells (1/240 s), or the computer's planned hits miss on the steeper maps.
+  const h = (def.bounce || def.split || def.id === 'child') ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
   let drilling = false, left = 150, bounced = false, fuse = 0;
   const b = { x: 0, y: 0, vx: 0, vy: 0 };
   const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90) d += 600; return d; };
@@ -1639,8 +1641,12 @@ function* searchShot(v, def, target, coarse){
   for (let e = Math.max(v.m.ang[0], 4); e <= v.m.ang[1]; e += de) es.push(e);
   for (let p = 22; p <= 100; p += dp) ps.push(p);
   const np = ps.length, d = new Float32Array(es.length * np);
+  // Yield every few shots, not once per angle: a row of long split or bounce flights can take tens of ms on a phone.
   for (let i = 0; i < es.length; i++){
-    for (let j = 0; j < np; j++) d[i * np + j] = simulate(v, facing, es[i], ps[j], def, target);
+    for (let j = 0; j < np; j++){
+      d[i * np + j] = simulate(v, facing, es[i], ps[j], def, target);
+      if ((j & 7) === 7) yield;
+    }
     yield;
   }
   let best = { sc: Infinity, d: 1e9, e: clampElev(v, 45), p: 70 };
@@ -3283,7 +3289,7 @@ $('#panel').addEventListener('input', e => {
 $('#juice-master').addEventListener('click', () => { S.juice = !S.juice; syncPanel(); saveSettings(); toast(S.juice ? '전투 연출을 켰습니다' : '전투 연출을 껐습니다'); });
 $('#btn-reset').addEventListener('click', () => { S = { ...DEFAULTS }; wind = clamp(wind, -S.windMax, S.windMax); syncPanel(); Snd.vol(); saveSettings(); toast('설정을 기본값으로 되돌렸습니다'); });
 $('#btn-copy').addEventListener('click', () => {
-  const text = 'SHELLBOUND 설정값 ' + JSON.stringify(S);
+  const text = '탄착점 설정값 ' + JSON.stringify(S);
   const box = $('#copy-box');
   const fallback = () => { box.hidden = false; box.value = text; box.focus(); box.select(); toast('글자를 길게 눌러 복사해 주세요', 2200); };
   try { navigator.clipboard.writeText(text).then(() => { toast('수치를 복사했습니다'); box.hidden = true; }, fallback); }

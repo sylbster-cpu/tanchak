@@ -12,7 +12,7 @@ const MAPS = [
   { id: 'highland', name: '고원', desc: '높은 중앙 지형과 급경사 측면', sky: ['#687b99','#748ba7','#8196ac','#91a5b5','#a6b7bd','#bac6c2','#cbd0be','#ded5bb'], scene: ['#8c9fab','#637f91','#476777'] }
 ];
 const MAP_BY_ID = Object.fromEntries(MAPS.map(m => [m.id, m]));
-const MAP_KEY = 'shellbound-map-v1';
+const MAP_KEY = 'shellbound-map-v1';   // key from before the name went back to 탄착점; kept so the saved choice survives
 let mapChoice = 'random', currentMap = MAPS[0];
 try { const savedMap = localStorage.getItem(MAP_KEY); if (savedMap === 'random' || MAP_BY_ID[savedMap]) mapChoice = savedMap; } catch(e) {}
 const SPAWN_GAP = [850, 1300];      // distance between the two batteries; full power on flat ground carries about 2000
@@ -941,8 +941,9 @@ function simulate(t, facing, rel, p, def, target){
 // How close a shell from this state lands to the target (0 = direct hit), following updateShells' rules.
 // A split shell follows all three pieces from the top of its arc and scores the closest one.
 function flight(t, x, y, vx, vy, def, target, age){
-  // a bounce depends on exactly where the shell meets the ground, so that shell is stepped like the real one (1/240 s)
-  const h = def.bounce ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
+  // A bounce depends on exactly where the shell meets the ground, and split pieces fall a long way from where they part;
+  // both are stepped like the real shells (1/240 s), or the computer's planned hits miss on the steeper maps.
+  const h = (def.bounce || def.split || def.id === 'child') ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
   let drilling = false, left = 150, bounced = false, fuse = 0;
   const b = { x: 0, y: 0, vx: 0, vy: 0 };
   const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90) d += 600; return d; };
@@ -1009,8 +1010,12 @@ function* searchShot(v, def, target, coarse){
   for (let e = Math.max(v.m.ang[0], 4); e <= v.m.ang[1]; e += de) es.push(e);
   for (let p = 22; p <= 100; p += dp) ps.push(p);
   const np = ps.length, d = new Float32Array(es.length * np);
+  // Yield every few shots, not once per angle: a row of long split or bounce flights can take tens of ms on a phone.
   for (let i = 0; i < es.length; i++){
-    for (let j = 0; j < np; j++) d[i * np + j] = simulate(v, facing, es[i], ps[j], def, target);
+    for (let j = 0; j < np; j++){
+      d[i * np + j] = simulate(v, facing, es[i], ps[j], def, target);
+      if ((j & 7) === 7) yield;
+    }
     yield;
   }
   let best = { sc: Infinity, d: 1e9, e: clampElev(v, 45), p: 70 };
@@ -2653,7 +2658,7 @@ $('#panel').addEventListener('input', e => {
 $('#juice-master').addEventListener('click', () => { S.juice = !S.juice; syncPanel(); saveSettings(); toast(S.juice ? '전투 연출을 켰습니다' : '전투 연출을 껐습니다'); });
 $('#btn-reset').addEventListener('click', () => { S = { ...DEFAULTS }; wind = clamp(wind, -S.windMax, S.windMax); syncPanel(); Snd.vol(); saveSettings(); toast('설정을 기본값으로 되돌렸습니다'); });
 $('#btn-copy').addEventListener('click', () => {
-  const text = 'SHELLBOUND 설정값 ' + JSON.stringify(S);
+  const text = '탄착점 설정값 ' + JSON.stringify(S);
   const box = $('#copy-box');
   const fallback = () => { box.hidden = false; box.value = text; box.focus(); box.select(); toast('글자를 길게 눌러 복사해 주세요', 2200); };
   try { navigator.clipboard.writeText(text).then(() => { toast('수치를 복사했습니다'); box.hidden = true; }, fallback); }
