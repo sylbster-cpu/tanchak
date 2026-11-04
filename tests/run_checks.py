@@ -416,6 +416,37 @@ with sync_playwright() as p:
       S.aiSkill=sk;return {minPower:+lo.toFixed(1)};})()""")
     check("the computer never plans a shot below the tap threshold", r["minPower"] >= 12, r)
 
+    # Coming back repaints the terrain once per return: not on the first load's pageshow, not twice when pageshow
+    # and visibilitychange both arrive, and still on a second quick return (an old 500 ms guard skipped it).
+    r = ev("""(()=>{const T=window.__tc;const c=T.layers.terr.getContext('2d');
+      const mark=()=>{c.fillStyle='#ff00ff';c.fillRect(5,5,2,2);};const marked=()=>{const d=c.getImageData(5,5,1,1).data;return d[0]===255&&d[1]===0&&d[2]===255;};
+      let hid=false;Object.defineProperty(document,'hidden',{configurable:true,get:()=>hid});
+      const vis=()=>document.dispatchEvent(new Event('visibilitychange')),show=()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:false}));
+      mark();show();const firstLoad=marked();
+      hid=true;vis();hid=false;vis();const back=marked();
+      mark();show();const twice=marked();
+      hid=true;vis();hid=false;vis();const again=marked();
+      delete document.hidden;return {firstLoad,back,twice,again};})()""")
+    check("resume repaints once per real return, not on first load", r == {"firstLoad": True, "back": False, "twice": True, "again": False}, r)
+
+    # Out of time while falling: the pass waits for the landing but charges no more than the time limit.
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),gv=S.gravity;S.turnTime=20;T.startGame('duo');for(let i=0;i<60*19.8;i++)T.update(1/60);
+      const a=T.get().tanks[0];S.gravity=120;a.y-=400;let land=0;
+      for(let i=0;i<60*5;i++){const was=a.airborne;T.update(1/60);if(was&&!a.airborne&&!land)land=T.get().turnT;}
+      S.gravity=gv;const g=T.get();return {land:+land.toFixed(2),cur:g.cur,d:g.tanks.map(t=>t.delay)};})()""")
+    check("timeout while falling charges at most the time limit", r["land"] >= 21 and r["cur"] == 1 and r["d"] == [700, 0], r)
+
+    # The computer's flight model sees a split piece coming down on the shooter (it used to score only the best piece).
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;let seed=7,bad=0,self=0;const R=()=>{seed=(seed*1103515245+12345)%2147483648;return seed/2147483648;};
+      for(let k=0;k<40;k++){T.startGame('duo',['howitzer','howitzer']);let g=T.get();const a=g.tanks[0],b=g.tanks[1];
+        b.x=Math.max(60,Math.min(T.W-60,a.x+(R()<0.5?-1:1)*(100+R()*200)));b.y=0;for(let i=0;i<40;i++)T.update(1/30);
+        T.setAmmo(a,['split']);a.sel='split';a.facing=R()<0.5?-1:1;a.elev=84+R()*6;const p=12+R()*88;T.setWind((R()*2-1)*40);
+        const sim=T.simulate(a,a.facing,a.elev,p,T.SHELL.split,b),hp0=a.hp;T.fire(a,p);
+        for(let i=0;i<400;i++){T.update(1/30);const ph=T.get().phase;if(ph!=='flying'&&ph!=='settle'&&i>5)break;}
+        if(a.hp<hp0){self++;if(sim<600)bad++;}}
+      T.setWind(0);T.S().turnTime=20;return {self,bad};})()""")
+    check("split: a piece landing on the shooter counts against the shot", r["self"] >= 3 and r["bad"] == 0, r)
+
     check("no page errors", not errs, errs[:5])
     b.close()
 

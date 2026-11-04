@@ -342,19 +342,21 @@ function checkTerrain(){
   if ((tctx.isContextLost && tctx.isContextLost()) || (bctx.isContextLost && bctx.isContextLost())){ terrLost = true; return; }
   if (terrLost) paintTerrain();
 }
-// pageshow and visibilitychange both fire when a page comes back, so one resume can arrive twice
-let lastResume = -1e9;
+// Repaint only after the page was really hidden: pageshow and visibilitychange both fire when a page comes
+// back, and pageshow also fires on the first load, when start() has just painted everything.
+let wasHidden = false;
 function onResume(){
-  if (document.hidden) return;
-  if (performance.now() - lastResume > 500){
+  if (document.hidden){ wasHidden = true; return; }
+  if (wasHidden){
+    wasHidden = false;
     paintTerrain();
     restoreVisualArt(true);
     Snd.resume();
-    lastResume = performance.now();
   }
   lastT = performance.now();   // after the repaint: coming back does not use up the paused turn clock
 }
 document.addEventListener('visibilitychange', onResume);
+window.addEventListener('pagehide', () => { wasHidden = true; });
 window.addEventListener('pageshow', onResume);
 
 /* ---------- scenery ---------- */
@@ -728,7 +730,8 @@ function passTurn(timeout){
   if (!canControl() || mode === 'practice') return;
   const t = tanks[cur];
   Snd.chargeStop(); Snd.rumble(false); fireHeld = false; power = 0;
-  t.delay += PASS_DELAY + Math.floor(turnT) * 10;
+  // a timeout can wait for a falling tank to land; the time past the limit is not charged
+  t.delay += PASS_DELAY + Math.floor(timed() ? Math.min(turnT, S.turnTime) : turnT) * 10;
   toast(timeout ? '시간이 다 되어 턴을 넘깁니다' : '턴을 넘겼습니다', 1600);
   Snd.tick(0.8);
   endTurn();
@@ -944,24 +947,27 @@ function simulate(t, facing, rel, p, def, target){
   return flight(t, pv.x + dir.x * MUZZLE, pv.y + dir.y * MUZZLE, dir.x * v, dir.y * v, def, target, 0);
 }
 // How close a shell from this state lands to the target (0 = direct hit), following updateShells' rules.
-// A split shell follows all three pieces from the top of its arc and scores the closest one.
-function flight(t, x, y, vx, vy, def, target, age){
+// Landing near the shooter adds 600 and sets out.self. A split shell follows all three pieces from the top
+// of its arc and scores the closest one, plus 600 if any piece comes down on the shooter.
+function flight(t, x, y, vx, vy, def, target, age, out){
   // A bounce depends on exactly where the shell meets the ground, and split pieces fall a long way from where they part;
   // both are stepped like the real shells (1/240 s), or the computer's planned hits miss on the steeper maps.
   const h = (def.bounce || def.split || def.id === 'child') ? 1 / 240 : 1 / 120, tx = target.x, ty = target.y - TANK_CY, g = S.gravity * def.gMul, wa = wind * def.windMul;
   let drilling = false, left = 150, bounced = false, fuse = 0;
   const b = { x: 0, y: 0, vx: 0, vy: 0 };
-  const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90) d += 600; return d; };
+  const score = (x, y) => { let d = Math.hypot(x - tx, y - ty); if (Math.hypot(x - t.x, y - t.y) < 90){ d += 600; if (out) out.self = true; } return d; };
   for (let i = 0, n = Math.ceil((12.5 - age) / h); i < n; i++){
     age += h;
     if (def.split && vy > 0 && age > 0.2){
-      let best = 1e9;
-      for (const off of SPLIT_SPREAD) best = Math.min(best, flight(t, x, y, vx + off, vy, SHELL.child, target, 0.3));
-      return best;
+      let best = 1e9; const o = { self: false };
+      for (const off of SPLIT_SPREAD) best = Math.min(best, flight(t, x, y, vx + off, vy, SHELL.child, target, 0.3, o));
+      return o.self ? best + 600 : best;
     }
     if (drilling){ vy += S.gravity * 0.35 * h; x += vx * h; y += vy * h; left -= Math.hypot(vx, vy) * h; }
     else { vx += wa * h; vy += g * h; x += vx * h; y += vy * h; }
     if ((x - tx) * (x - tx) + (y - ty) * (y - ty) < TANK_R * TANK_R) return 0;
+    // like updateShells, a shell coming back (a bounce, a lob in a headwind) bursts on its own tank
+    if (age > 0.25 && (x - t.x) * (x - t.x) + (y - t.y + TANK_CY) * (y - t.y + TANK_CY) < TANK_R * TANK_R) return score(x, y);
     if (x < -400 || x > W + 400 || y > H + 60) return 1e9;
     if (drilling){ if (left <= 0) return score(x, y); continue; }
     if (bounced && (fuse += h) > BOUNCE_FUSE) return score(x, y);
@@ -2913,7 +2919,7 @@ if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planS
   toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
   setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; }, lat,
   setAmmo: (t, ids) => { t.ammo = { basic: Infinity }; for (const id of ids) t.ammo[id] = (t.ammo[id] || 0) + 1; },
-  standAt, applyFx, toggleFxPop, armFx, FXD, explode, Snd, MAPS, map: () => currentMap.id, setMapChoice: id => { if (id === 'random' || MAP_BY_ID[id]) mapChoice = id; },
+  standAt, applyFx, toggleFxPop, armFx, FXD, explode, Snd, simulate, SHELL, setWind: v => { wind = v; }, MAPS, map: () => currentMap.id, setMapChoice: id => { if (id === 'random' || MAP_BY_ID[id]) mapChoice = id; },
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 start({});
