@@ -40,9 +40,12 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .lcd b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.05;color:var(--amber);text-shadow:0 0 8px rgba(255,191,74,.45);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cap{font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--brass);white-space:nowrap}
 
-/* ---------- top: player plates and wind ---------- */
-#hud-top{position:fixed;top:0;left:0;right:0;z-index:10;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:start;
+/* ---------- top: player plates and wind; second row: buttons on the sides, minimap in the middle ---------- */
+#hud-top{position:fixed;top:0;left:0;right:0;z-index:10;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"p1 ctr p2" "cl mm cr";gap:6px 10px;align-items:start;
   padding:calc(8px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));pointer-events:none}
+#hp0{grid-area:p1} #center-top{grid-area:ctr} #hp1{grid-area:p2}
+.chips.left{grid-area:cl;justify-content:flex-start} .chips.right{grid-area:cr;justify-content:flex-end}
+#minimap{grid-area:mm;justify-self:center;display:block;width:clamp(220px,34vw,480px);height:54px;box-sizing:border-box;border-radius:9px;border:2px solid var(--edge);background:rgba(10,24,38,.42);box-shadow:0 2px 0 rgba(0,0,0,.35);pointer-events:auto;touch-action:none;cursor:pointer}
 .plate{display:flex;align-items:center;gap:10px;min-width:0;max-width:290px;padding:6px 12px 6px 6px;border-radius:13px;transition:border-color .2s,box-shadow .2s}
 .plate.p2{justify-self:end;flex-direction:row-reverse;padding:6px 6px 6px 12px}
 .plate.active{border-color:var(--brass);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 3px rgba(226,169,72,.28),0 3px 0 rgba(0,0,0,.35)}
@@ -85,8 +88,8 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .p2 .dly{margin-left:0;margin-right:auto}
 .dly em{font-style:normal;color:var(--amber)}
 .dly em.go{color:#86e09a}
-.chips{display:flex;gap:6px;pointer-events:auto;justify-content:center}
-.chip{padding:5px 11px;border-radius:9px;font-size:12px;font-weight:700;color:var(--paper);background:linear-gradient(180deg,var(--steel-3),var(--steel-2));border:2px solid var(--edge);box-shadow:0 2px 0 rgba(0,0,0,.45)}
+.chips{display:flex;gap:6px;pointer-events:none;justify-content:center}
+.chip{pointer-events:auto;padding:5px 11px;border-radius:9px;font-size:12px;font-weight:700;color:var(--paper);background:linear-gradient(180deg,var(--steel-3),var(--steel-2));border:2px solid var(--edge);box-shadow:0 2px 0 rgba(0,0,0,.45)}
 .chip:active{transform:translateY(1px);box-shadow:none}
 .chip.on{background:linear-gradient(180deg,#f3c46a,var(--brass));color:#1a1408;border-color:#5f4512}
 
@@ -166,6 +169,7 @@ body.touch #btn-fire{display:grid}
   .angpad .tbtn{height:32px}
   .power-row{grid-template-columns:minmax(0,1fr) auto}
   #timer{width:38px;height:38px} #timer::before{inset:4px} #timer b{font-size:16px}
+  #minimap{height:36px;border-radius:7px}
   .dly{font-size:9.5px}
   .power-row .cap{display:none}
 }
@@ -265,12 +269,6 @@ body.touch #btn-fire{display:grid}
       <span class="lcd"><b>0</b></span>
     </div>
     </div>
-    <div class="chips">
-      <button id="btn-pass" class="chip" type="button" hidden>넘기기</button>
-      <button id="btn-menu" class="chip" type="button">처음으로</button>
-      <button id="btn-tune" class="chip" type="button">조율판</button>
-      <button id="btn-full" class="chip" type="button" hidden>전체화면</button>
-    </div>
   </div>
   <div class="plate p2 steel" id="hp1">
     <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true" style="transform:scaleX(-1)"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
@@ -278,6 +276,15 @@ body.touch #btn-fire{display:grid}
       <div class="pname"><span class="dly"></span><span class="turn-tag">차례</span><span class="nm">컴퓨터</span></div>
       <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
     </div>
+  </div>
+  <div class="chips left">
+    <button id="btn-menu" class="chip" type="button">처음으로</button>
+    <button id="btn-tune" class="chip" type="button">조율판</button>
+  </div>
+  <canvas id="minimap" aria-label="전체 지도. 누르거나 끌면 그곳을 봅니다"></canvas>
+  <div class="chips right">
+    <button id="btn-pass" class="chip" type="button" hidden>넘기기</button>
+    <button id="btn-full" class="chip" type="button" hidden>전체화면</button>
   </div>
 </header>
 
@@ -369,7 +376,12 @@ body.touch #btn-fire{display:grid}
 <script>
 (() => {
 'use strict';
-const W = 1600, H = 900;
+// The world is several screens wide; the camera follows the action and the minimap shows the whole of it.
+// solid takes W*H bytes; the two terrain canvases take W*H*4 bytes each (3200x900: 2.9 MB + 2 x 11.5 MB).
+const W = 3200, H = 900;
+const FEATURE = 1600;               // terrain and scenery wavelengths are set per this many px, so a wider map gets more hills, not stretched ones
+const VIEW_W = 1100, VIEW_H = 520;  // at zoom 1 the screen shows about this much of the world (the tighter of the two wins)
+const SPAWN_GAP = [850, 1300];      // distance between the two batteries; full power on flat ground carries about 2000
 const KEY = 'tanchak-tuning-v1';
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TANK_R = 27, TANK_CY = 15, PIVOT_H = 26, MUZZLE = 38;
@@ -377,6 +389,7 @@ const NO_GROUND = H + 1000;
 
 const DEFAULTS = {
   gravity: 500, windMax: 90, powerScale: 1.0, gaugeSpeed: 70, pingPong: false, moveSpeed: 70, aimLineOn: true,
+  viewZoom: 1.0,
   juice: true,
   hitStop: 70, hitStopOn: true,
   shake: reduceMotion ? 0.35 : 1.0, shakeOn: true,
@@ -431,11 +444,19 @@ function resize(){
   dpr = Math.min(2, window.devicePixelRatio || 1);
   cw = window.innerWidth; ch = window.innerHeight;
   cvs.width = Math.round(cw * dpr); cvs.height = Math.round(ch * dpr);
-  hudTopBottom = Math.max(60, document.getElementById('hud-top').getBoundingClientRect().bottom);
-  sizeDial();
+  measureHud();
+  sizeDial(); sizeMinimap();
   checkRotate();
 }
 window.addEventListener('resize', resize);
+// The play area is the strip between the top HUD and the console; the camera frames things inside it.
+function measureHud(){
+  const top = $('#hud-top').getBoundingClientRect(), con = $('#console').getBoundingClientRect();
+  hudTopBottom = Math.max(60, top.bottom);
+  playTop = hudTopBottom;
+  playBot = (con.height > 0 && con.top > playTop + 40) ? con.top : ch;
+  $('#toast').style.top = Math.round(hudTopBottom + 8) + 'px';
+}
 
 /* ---------- terrain ---------- */
 // Two off-screen layers: a dark back wall (never carved) and the destructible ground on top of it.
@@ -448,7 +469,7 @@ const bctx = back.getContext('2d');
 let solid = new Uint8Array(W * H);
 let top0 = new Float32Array(W).fill(H), tufts = [], ops = [];
 let edgeL = H * 0.6, edgeR = H * 0.6;
-let terrLost = false;
+let terrLost = false, terrVer = 0;   // terrVer counts terrain changes so the minimap knows when to redraw
 function isSolid(x, y){
   x = Math.floor(x); y = Math.floor(y);
   if (x < 0 || x >= W || y < 0 || y >= H) return false;
@@ -483,14 +504,20 @@ function soil(y, depth, wob){
   }
   C[0] = r; C[1] = g; C[2] = b;
 }
+function pickSpawns(){
+  const gap = rand(SPAWN_GAP[0], SPAWN_GAP[1]), x0 = rand(180, W - 180 - gap);
+  return [Math.round(x0), Math.round(x0 + gap)];
+}
 function genTerrain(spawns){
   const top = new Float32Array(W);
   const a1 = rand(0, 6.28), a2 = rand(0, 6.28), a3 = rand(0, 6.28);
-  const ridge = rand(70, 170), ridgeX = rand(0.44, 0.56), ridgeW = rand(0.08, 0.14);
+  // a ridge between the two batteries, plus a few hills and dips scattered over the rest of the map
+  const bumps = [{ x: spawns[0] + (spawns[1] - spawns[0]) * rand(0.4, 0.6), w: rand(128, 224), h: rand(70, 170) }];
+  for (let k = 0, n = Math.round(2 * W / FEATURE); k < n; k++) bumps.push({ x: rand(0, W), w: rand(120, 260), h: rand(-60, 120) });
   for (let x = 0; x < W; x++){
-    const t = x / W;
+    const t = x / FEATURE;
     let y = H * 0.55 + Math.sin(t * 6.9 + a1) * 50 + Math.sin(t * 17 + a2) * 24 + Math.sin(t * 40 + a3) * 7;
-    y -= Math.exp(-Math.pow((t - ridgeX) / ridgeW, 2)) * ridge;
+    for (const b of bumps) y -= Math.exp(-(((x - b.x) / b.w) ** 2)) * b.h;
     top[x] = clamp(y, H * 0.3, H * 0.64);
   }
   for (const sx of spawns){
@@ -509,29 +536,35 @@ function genTerrain(spawns){
   tufts = [];
   for (let x = 2; x < W; x += 4) tufts.push([x, top[x], rand(-2.5, 2.5), rand(3, 8)]);
   ops = [];
+  terrVer++;
   paintTerrain();
 }
+// Painted in vertical strips so the temporary pixel buffers stay small (a full-size pair would be 23 MB at 3200x900).
+const STRIP = 256;
 function paintTerrain(){
-  const fi = tctx.createImageData(W, H), fd = fi.data;
-  const bi = bctx.createImageData(W, H), bd = bi.data;
-  for (let x = 0; x < W; x++){
-    const sy = Math.max(0, Math.ceil(top0[x]));
-    const wob = Math.sin(x * 0.004) * 2.2;
-    for (let y = sy; y < H; y++){
-      const i = y * W + x, p = i * 4, depth = y - top0[x];
-      const n = (hash2(x, y) - 0.5) * 16;
-      soil(y, Math.max(depth, 16), wob);
-      bd[p] = C[0] * 0.4 + n * 0.4; bd[p + 1] = C[1] * 0.38 + n * 0.4; bd[p + 2] = C[2] * 0.42 + n * 0.4; bd[p + 3] = 255;
-      if (!solid[i]) continue;
-      soil(y, depth, wob);
-      fd[p] = C[0] + n; fd[p + 1] = C[1] + n; fd[p + 2] = C[2] + n; fd[p + 3] = 255;
-    }
-  }
-  bctx.putImageData(bi, 0, 0);
+  const fi = tctx.createImageData(STRIP, H), fd = fi.data;
+  const bi = bctx.createImageData(STRIP, H), bd = bi.data;
   tctx.save();
   tctx.globalCompositeOperation = 'source-over';
   tctx.clearRect(0, 0, W, H);
-  tctx.putImageData(fi, 0, 0);
+  for (let x0 = 0; x0 < W; x0 += STRIP){
+    fd.fill(0); bd.fill(0);
+    for (let x = x0, x1 = Math.min(W, x0 + STRIP); x < x1; x++){
+      const sy = Math.max(0, Math.ceil(top0[x]));
+      const wob = Math.sin(x * 0.004) * 2.2;
+      for (let y = sy; y < H; y++){
+        const i = y * W + x, p = (y * STRIP + x - x0) * 4, depth = y - top0[x];
+        const n = (hash2(x, y) - 0.5) * 16;
+        soil(y, Math.max(depth, 16), wob);
+        bd[p] = C[0] * 0.4 + n * 0.4; bd[p + 1] = C[1] * 0.38 + n * 0.4; bd[p + 2] = C[2] * 0.42 + n * 0.4; bd[p + 3] = 255;
+        if (!solid[i]) continue;
+        if (depth < 16) soil(y, depth, wob);   // below that the colour is the same as the back wall's
+        fd[p] = C[0] + n; fd[p + 1] = C[1] + n; fd[p + 2] = C[2] + n; fd[p + 3] = 255;
+      }
+    }
+    bctx.putImageData(bi, x0, 0);
+    tctx.putImageData(fi, x0, 0);
+  }
   tctx.lineCap = 'round';
   for (const [x, y, dx, h] of tufts){
     if (!isSolid(x, Math.ceil(y) + 4)) continue;
@@ -553,7 +586,7 @@ function carve(cx, cy, r, scorch){
     for (let x = x0; x <= x1; x++){ const dx = x - cx; if (dx * dx + dy * dy <= r2) solid[row + x] = 0; }
   }
   const o = { cx, cy, r, scorch };
-  ops.push(o); drawCarve(o);
+  ops.push(o); drawCarve(o); terrVer++;
 }
 function drawCarve(o){
   const { cx, cy, r, scorch } = o;
@@ -596,14 +629,14 @@ function genScenery(){
   ].map(L => {
     const pts = [];
     for (let x = -900; x <= W + 900; x += 20){
-      const t = x / W;
+      const t = x / FEATURE;
       const y = H * L.base - L.amp * (0.6 * Math.sin(t * L.f[0] + L.ph[0]) + 0.3 * Math.sin(t * L.f[1] + L.ph[1]) + 0.1 * Math.sin(t * L.f[2] + L.ph[2]) + 0.6);
       pts.push(x, y);
     }
     return { col: L.col, p: L.p, pts };
   });
-  clouds = Array.from({ length: 7 }, () => ({ x: rand(-700, W + 700), y: rand(H * 0.05, H * 0.3), s: rand(0.7, 1.5) }));
-  motes = Array.from({ length: 50 }, () => ({ x: rand(-200, W + 200), y: rand(H * 0.04, H * 0.6), ph: rand(0, 6.28), l: rand(0.5, 1) }));
+  clouds = Array.from({ length: Math.round(7 * W / FEATURE) }, () => ({ x: rand(-700, W + 700), y: rand(H * 0.05, H * 0.3), s: rand(0.7, 1.5) }));
+  motes = Array.from({ length: Math.round(50 * W / FEATURE) }, () => ({ x: rand(-200, W + 200), y: rand(H * 0.04, H * 0.6), ph: rand(0, 6.28), l: rand(0.5, 1) }));
 }
 
 /* ---------- game state ---------- */
@@ -639,13 +672,14 @@ function shooterCanAct(){ return mode !== 'practice' || cur === 0; }
 function startGame(m){
   mode = m;
   armBackTrap();
-  const sx = [Math.round(rand(190, 310)), Math.round(rand(1290, 1410))];
+  const sx = pickSpawns();
   genTerrain(sx); genScenery();
   tanks = [makeTank(0, sx[0]), makeTank(1, sx[1])];
   tanks.forEach(t => { t.y = groundY(t.x, 0); });
   shells = []; parts = []; texts = []; rings = []; timers = [];
   stats[0] = mkStats(); stats[1] = mkStats();
   cur = 0; wind = 0; turnCount = 0; hitStop = 0; trauma = 0; timeScale = 1;
+  clearLook(); camSnap = true; cam.z = 1;
   $('#hp0 .nm').textContent = NAMES[m][0]; $('#hp1 .nm').textContent = NAMES[m][1];
   $('#start').hidden = true; $('#over').hidden = true;
   beginTurn();
@@ -653,6 +687,7 @@ function startGame(m){
 function timed(){ return S.turnTime > 0 && mode !== 'practice'; }
 function beginTurn(again){
   turnCount++;
+  clearLook();
   turnT = 0; tickSec = -1;
   const prev = wind / Math.max(1, S.windMax);
   wind = clamp(prev * 0.35 + rand(-1, 1) * 0.85, -1, 1) * S.windMax;
@@ -758,12 +793,14 @@ function fire(t, p){
   if (J('shake')) addTrauma(0.12 * S.recoil);
   Snd.chargeStop(); Snd.fire(); Snd.whistleStart(); buzz(18);
   phase = 'flying'; phaseT = 0; power = 0;
+  clearLook(); camBlast = null;
 }
 function addTrauma(a){ trauma = Math.min(1, trauma + a * S.shake); }
 
 /* ---------- explosions ---------- */
 function explode(x, y, def, direct, owner, shot){
   carve(x, y, def.r, true);
+  camBlast = { x, y };
   let anyHit = false, hitEnemy = false, bestEnemy = 0;
   for (const t of tanks){
     if (!t.alive) continue;
@@ -929,7 +966,7 @@ window.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('pointerdown', () => Snd.resume(), true);
 window.addEventListener('keydown', () => Snd.resume(), true);
 const coarse = matchMedia('(pointer: coarse)');
-function setTouch(on){ document.body.classList.toggle('touch', on); checkRotate(); try { syncFull(); } catch (e) {} sizeDial(); }
+function setTouch(on){ document.body.classList.toggle('touch', on); checkRotate(); try { syncFull(); } catch (e) {} sizeDial(); measureHud(); sizeMinimap(); }
 
 /* ---------- shell slots ---------- */
 function renderCards(){
@@ -1004,7 +1041,7 @@ function updateControl(dt, rdt){
   }
   if (canControl()){
     const dir = held.left ? -1 : held.right ? 1 : 0;
-    if (dir && phase === 'aim') moveTank(t, dir, rdt); else Snd.rumble(false);
+    if (dir && phase === 'aim'){ if (look && !dragging) look = null; moveTank(t, dir, rdt); } else Snd.rumble(false);
     for (const k of ['up', 'down']){
       if (held[k]){ holdT[k] += rdt; if (holdT[k] > 0.22) t.elev = clamp(t.elev + (k === 'up' ? 1 : -1) * 32 * rdt, 0, 90); }
     }
@@ -1148,32 +1185,66 @@ function updateScenery(rdt){
 }
 
 /* ---------- camera ---------- */
-function baseScale(){
-  const fit = Math.min(cw / W, ch / H), fillW = cw / W;
-  // on wide phones fill the width and crop a little sky instead of showing empty side bands
-  return (ch / fillW >= H * 0.7) ? Math.max(fit, fillW) : fit;
-}
+// The camera frames a world point at a set height inside the play area (between the top HUD and the console):
+// the current tank while aiming, the shell in flight, and it holds still after the blast until the next turn.
+// Dragging on the battlefield or the minimap takes the camera over ("look"); a tap, firing or a new turn gives it back.
+let playTop = 80, playBot = 600;
+let look = null, camSnap = true, dragging = false, camBlast = null;
+const goal = { x: W / 2, y: H / 2, fy: 0.6 };
+let markers = [];
+function baseScale(){ return Math.min(1.1, cw / VIEW_W, ch / VIEW_H) * S.viewZoom; }
+function viewScale(){ return baseScale() * cam.z; }
+function framed(x, y, fy, s){ return { x, y: y - (playTop + (playBot - playTop) * fy - ch / 2) / s }; }
 function updateCamera(rdt){
-  const s0 = baseScale();
-  let tz = 1, tx = W / 2, ty = null;
   const live = shells.filter(s => !s.dead);
-  const age = live.reduce((m, s) => Math.max(m, s.age), 0);
-  if (phase === 'flying' && J('cam') && live.length && age >= S.camDelay){
-    tz = S.camZoom;
-    tx = live.reduce((a, s) => a + s.x, 0) / live.length;
-    ty = live.reduce((a, s) => a + s.y, 0) / live.length;
+  let tz = 1, rate = 4;
+  const ct = tanks[cur];
+  if (phase === 'flying' && live.length){
+    // Frame the shells together with the ground under them, looking a little ahead so the camera does not
+    // trail behind. High shots zoom out (the play area on a phone is short); the zoom comes back in as the
+    // shell drops, up to the 'follow zoom' once it has flown for camDelay.
+    const lead = 0.2;
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, age = 0;
+    for (const sh of live){
+      const fx = sh.x + sh.vx * lead, fy = sh.y + sh.vy * lead;
+      const g = Math.min(H, groundY(clamp(fx, 0, W - 1), Math.max(0, Math.min(sh.y, fy))));
+      x0 = Math.min(x0, sh.x, fx); x1 = Math.max(x1, sh.x, fx); y0 = Math.min(y0, sh.y, fy); y1 = Math.max(y1, sh.y, fy, g);
+      age = Math.max(age, sh.age);
+    }
+    y0 -= 80; y1 += 40; x0 -= 120; x1 += 120;   // room above for the damage number
+    const fit = Math.min((playBot - playTop) / (y1 - y0), cw / (x1 - x0)) / baseScale();
+    tz = clamp(fit, 0.45, (J('cam') && age >= S.camDelay) ? S.camZoom : 1);
+    // when even the widest view cannot hold both, keep the shell at the top and show as much below it as fits
+    const viewH = (playBot - playTop) / (baseScale() * tz);
+    goal.x = (x0 + x1) / 2; goal.y = (y1 - y0 > viewH) ? y0 + viewH / 2 : (y0 + y1) / 2; goal.fy = 0.5; rate = 6;
+  } else if (phase === 'settle' && camBlast){
+    goal.x = camBlast.x; goal.y = camBlast.y; goal.fy = 0.58;   // after the blast, settle on it
+  } else if ((TURN_PHASES.includes(phase) || phase === 'menu') && ct && !ct.gone){
+    goal.x = ct.x; goal.y = ct.y - TANK_CY; goal.fy = 0.62;
   }
-  const k = 1 - Math.exp(-rdt * (tz > cam.z ? 3.2 : 2.4));
-  cam.z += (tz - cam.z) * k;
-  const s = s0 * cam.z, vw = cw / s, vh = ch / s;
-  if (ty === null) ty = H - vh / 2;
-  cam.x += (tx - cam.x) * k * 1.6;
-  cam.y += (ty - cam.y) * k * 1.6;
-  if (vw >= W) cam.x = W / 2; else cam.x = clamp(cam.x, vw / 2, W - vw / 2);
-  cam.y = Math.min(cam.y, H - vh / 2);
+  cam.z += (tz - cam.z) * (camSnap ? 1 : 1 - Math.exp(-rdt * (tz > cam.z ? 3.2 : 3)));
+  const s = viewScale();
+  let tx, ty;
+  if (look){ tx = look.x; ty = look.y; rate = dragging ? Infinity : 9; }
+  else ({ x: tx, y: ty } = framed(goal.x, goal.y, goal.fy, s));
+  const k = (camSnap || rate === Infinity) ? 1 : 1 - Math.exp(-rdt * rate);
+  cam.x += (tx - cam.x) * k;
+  cam.y += (ty - cam.y) * k;
+  clampCam(s);
+  if (look && dragging){ look.x = cam.x; look.y = cam.y; }   // a drag past the map edge does not pile up
+  camSnap = false;
+}
+function clampCam(s){
+  const vw = cw / s, vh = ch / s;
+  cam.x = vw >= W ? W / 2 : clamp(cam.x, vw / 2, W - vw / 2);
+  // the bottom of the world may come up to the console's top edge but no further; above, leave room for high shots
+  cam.y = clamp(cam.y, -900 + vh / 2, H - (playBot - ch / 2) / s);
+}
+function lookAtWorld(x, y, fy){
+  look = framed(x, y, fy, viewScale());
 }
 function worldTransform(){
-  const s = baseScale() * cam.z;
+  const s = viewScale();
   let sx = 0, sy = 0, rot = 0;
   if (J('shake') && trauma > 0){
     const a = trauma * trauma;
@@ -1183,7 +1254,41 @@ function worldTransform(){
   }
   return { s, sx, sy, rot };
 }
-function toScreen(x, y){ const s = baseScale() * cam.z; return { x: cw / 2 + (x - cam.x) * s, y: ch / 2 + (y - cam.y) * s }; }
+function toScreen(x, y){ const s = viewScale(); return { x: cw / 2 + (x - cam.x) * s, y: ch / 2 + (y - cam.y) * s }; }
+
+// drag the battlefield to look around; a tap returns to the action, or jumps to a tank marker at the screen edge
+let drag = null;
+cvs.addEventListener('pointerdown', e => {
+  if (drag || (e.pointerType === 'mouse' && e.button !== 0) || phase === 'menu') return;
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+  try { cvs.setPointerCapture(e.pointerId); } catch (err) {}
+});
+cvs.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved){
+    if (Math.hypot(dx, dy) < 9) return;
+    drag.moved = true; dragging = true; look = { x: cam.x, y: cam.y };
+  }
+  const s = viewScale();
+  look.x -= dx / s; look.y -= dy / s;
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+function endDrag(e){
+  if (!drag || e.pointerId !== drag.id) return;
+  const tap = !drag.moved && e.type === 'pointerup';
+  drag = null; dragging = false;
+  if (tap) tapAt(e.clientX, e.clientY);
+}
+cvs.addEventListener('pointerup', endDrag);
+cvs.addEventListener('pointercancel', endDrag);
+cvs.addEventListener('lostpointercapture', endDrag);
+function tapAt(x, y){
+  const m = markers.find(m => Math.hypot(m.x - x, m.y - y) < 30);
+  if (m){ lookAtWorld(m.t.x, m.t.y - TANK_CY, 0.62); return; }
+  look = null;
+}
+function clearLook(){ look = null; dragging = false; drag = null; }
 
 /* ---------- render ---------- */
 function render(){
@@ -1196,8 +1301,9 @@ function render(){
   ctx.save();
   ctx.translate(cw / 2 + sx, ch / 2 + sy); ctx.rotate(rot); ctx.scale(s, s); ctx.translate(-cam.x, -cam.y);
 
-  // sun
-  const sunX = W * 0.8 + (cam.x - W / 2) * 0.75, sunY = H * 0.17 + (cam.y - H / 2) * 0.75;
+  const vw = cw / s, vh = ch / s;
+  // sun: nearly fixed to the screen (upper right), drifting a little as the camera crosses the map
+  const sunX = cam.x + vw * 0.3 - (cam.x - W / 2) * 0.04, sunY = cam.y - vh * 0.3;
   const sg = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 170);
   sg.addColorStop(0, 'rgba(255,250,225,1)'); sg.addColorStop(0.16, 'rgba(255,240,190,.75)'); sg.addColorStop(1, 'rgba(255,240,190,0)');
   ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sunX, sunY, 170, 0, Math.PI * 2); ctx.fill();
@@ -1223,13 +1329,22 @@ function render(){
     ctx.lineWidth = 1.6 * m.l; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.x - Math.sign(wind || 1) * len, m.y); ctx.stroke();
   }
 
-  // ground beyond the world edges
+  // ground beyond the world edges, and below its bottom (normally hidden under the console)
   ctx.fillStyle = '#5b3420';
   ctx.fillRect(-3000, edgeL, 3000, H - edgeL + 2000);
   ctx.fillRect(W, edgeR, 3000, H - edgeR + 2000);
   ctx.fillStyle = '#70b840'; ctx.fillRect(-3000, edgeL, 3000, 9); ctx.fillRect(W, edgeR, 3000, 9);
-  ctx.drawImage(back, 0, 0);
-  ctx.drawImage(terr, 0, 0);
+  ctx.fillStyle = '#24150d'; ctx.fillRect(0, H, W, 2000);
+  // only the part of the terrain layers that is on screen; the map is several screens wide
+  {
+    const pad = 40 + (Math.abs(sx) + Math.abs(sy)) / s + Math.abs(rot) * Math.max(vw, vh);
+    const x0 = Math.max(0, Math.floor(cam.x - vw / 2 - pad)), x1 = Math.min(W, Math.ceil(cam.x + vw / 2 + pad));
+    const y0 = Math.max(0, Math.floor(cam.y - vh / 2 - pad)), y1 = Math.min(H, Math.ceil(cam.y + vh / 2 + pad));
+    if (x1 > x0 && y1 > y0){
+      ctx.drawImage(back, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+      ctx.drawImage(terr, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+    }
+  }
 
   // aim lines: current direction and the previous shot's angle
   const ct = tanks[cur];
@@ -1316,8 +1431,115 @@ function render(){
       ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 9, y + 15); ctx.lineTo(x + 9, y + 15); ctx.closePath(); ctx.stroke(); ctx.fill();
     }
   }
+  drawMarkers();
   if (screenFlash > 0 && J('flash')){ ctx.fillStyle = `rgba(255,244,220,${screenFlash})`; ctx.fillRect(0, 0, cw, ch); }
 }
+
+// Tanks outside the play area get a marker on its edge, pointing at them. Tapping one looks at that tank.
+function drawMarkers(){
+  markers = [];
+  if (phase === 'menu') return;
+  const m = 30, top = playTop + m, bot = Math.max(top, playBot - m);
+  for (const t of tanks){
+    if (!t.alive || t.gone) continue;
+    const p = toScreen(t.x, t.y - TANK_CY);
+    if (p.x > -12 && p.x < cw + 12 && p.y > playTop - 12 && p.y < playBot + 12) continue;
+    const x = clamp(p.x, m, cw - m), y = clamp(p.y, top, bot), a = Math.atan2(p.y - y, p.x - x), c = COLORS[t.i];
+    markers.push({ x, y, t });
+    ctx.save(); ctx.translate(x, y);
+    ctx.rotate(a);
+    ctx.fillStyle = c.main; ctx.strokeStyle = '#0b0f0c'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(26, 0); ctx.lineTo(13, -9); ctx.lineTo(13, 9); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.rotate(-a);
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // a small hull and barrel inside the disc
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.moveTo(-9, 4); ctx.lineTo(9, 4); ctx.lineTo(7, -1); ctx.lineTo(-6, -1); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, -1); ctx.lineTo(t.facing * 7, -6); ctx.stroke();
+    if (t === tanks[cur] && phase !== 'over'){ ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 19 + Math.sin(performance.now() / 160) * 1.5, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.restore();
+  }
+}
+
+/* ---------- minimap ---------- */
+// The whole map in a strip at the top: terrain (redrawn from the collision mask when it changes), the part
+// on screen, tanks and shells. Press or drag on it to look there.
+const mm = $('#minimap'), mctx = mm.getContext('2d');
+const mmTerr = document.createElement('canvas'), mtctx = mmTerr.getContext('2d');
+const MM_Y0 = 150;   // the strip shows world heights from here down to the bottom
+let mmW = 0, mmH = 0, mmK = 1, mmVer = -1, mmPainted = 0, mmPointer = null;
+function sizeMinimap(){
+  const r = mm.getBoundingClientRect();
+  mmK = Math.min(2, window.devicePixelRatio || 1);
+  mmW = Math.max(1, Math.round(r.width * mmK)); mmH = Math.max(1, Math.round(r.height * mmK));
+  if (mm.width !== mmW || mm.height !== mmH){ mm.width = mmW; mm.height = mmH; mmTerr.width = mmW; mmTerr.height = mmH; }
+  mmVer = -1;
+}
+const mmX = x => x / W * mmW, mmY = y => (y - MM_Y0) / (H - MM_Y0) * mmH;
+function paintMinimapTerrain(){
+  const img = mtctx.createImageData(mmW, mmH), d = img.data;
+  for (let mx = 0; mx < mmW; mx++){
+    const wx = Math.min(W - 1, Math.floor((mx + 0.5) / mmW * W));
+    let above = false;
+    for (let my = 0; my < mmH; my++){
+      const wy = Math.min(H - 1, Math.floor(MM_Y0 + (my + 0.5) / mmH * (H - MM_Y0)));
+      const on = solid[wy * W + wx] === 1;
+      if (on){
+        const p = (my * mmW + mx) * 4, edge = !above;
+        d[p] = edge ? 124 : 176; d[p + 1] = edge ? 196 : 108; d[p + 2] = edge ? 68 : 62; d[p + 3] = 255;
+      }
+      above = on;
+    }
+  }
+  mtctx.putImageData(img, 0, 0);
+}
+function drawMinimap(now){
+  if (mmW < 8 || mmH < 8) return;
+  // terrain changes many times while a drill shell digs, so redraw at most a few times a second
+  if (mmVer !== terrVer && (now - mmPainted > 120 || phase !== 'flying')){ mmVer = terrVer; mmPainted = now; paintMinimapTerrain(); }
+  const k = mmK;
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.clearRect(0, 0, mmW, mmH);
+  mctx.drawImage(mmTerr, 0, 0);
+  // what the screen shows
+  const s = viewScale();
+  const x0 = mmX(cam.x - cw / 2 / s), x1 = mmX(cam.x + cw / 2 / s);
+  const y0 = mmY(cam.y + (playTop - ch / 2) / s), y1 = mmY(cam.y + (playBot - ch / 2) / s);
+  const rx0 = clamp(x0, 1, mmW - 1), rx1 = clamp(x1, 1, mmW - 1), ry0 = clamp(y0, 1, mmH - 1), ry1 = clamp(y1, 1, mmH - 1);
+  mctx.fillStyle = 'rgba(255,255,255,.12)'; mctx.fillRect(rx0, ry0, rx1 - rx0, ry1 - ry0);
+  mctx.strokeStyle = look ? 'rgba(255,214,120,.95)' : 'rgba(255,255,255,.8)'; mctx.lineWidth = 1.5 * k;
+  mctx.strokeRect(rx0, ry0, rx1 - rx0, ry1 - ry0);
+  // shells
+  mctx.fillStyle = '#fff6e6';
+  for (const sh of shells){ mctx.beginPath(); mctx.arc(mmX(sh.x), clamp(mmY(sh.y), 2 * k, mmH - 2 * k), 1.8 * k, 0, Math.PI * 2); mctx.fill(); }
+  // tanks
+  for (const t of tanks){
+    if (t.gone) continue;
+    const x = mmX(t.x), y = clamp(mmY(t.y - TANK_CY), 4 * k, mmH - 4 * k);
+    mctx.fillStyle = t.alive ? COLORS[t.i].main : '#4a4246'; mctx.strokeStyle = '#0b0f0c'; mctx.lineWidth = 1.5 * k;
+    mctx.beginPath(); mctx.arc(x, y, 3.6 * k, 0, Math.PI * 2); mctx.fill(); mctx.stroke();
+    if (t === tanks[cur] && t.alive && phase !== 'menu' && phase !== 'over'){
+      mctx.strokeStyle = '#fff'; mctx.lineWidth = 1.2 * k;
+      mctx.beginPath(); mctx.arc(x, y, (6 + Math.sin(now / 160)) * k, 0, Math.PI * 2); mctx.stroke();
+    }
+  }
+}
+function minimapLook(e){
+  if (phase === 'menu') return;
+  const r = mm.getBoundingClientRect();
+  const x = clamp((e.clientX - r.left) / Math.max(1, r.width), 0, 1) * W;
+  const gy = groundY(x, 0);
+  lookAtWorld(x, gy < NO_GROUND ? gy : H * 0.6, 0.62);
+}
+mm.addEventListener('pointerdown', e => {
+  e.preventDefault(); mmPointer = e.pointerId;
+  try { mm.setPointerCapture(e.pointerId); } catch (err) {}
+  minimapLook(e);
+});
+mm.addEventListener('pointermove', e => { if (mmPointer === e.pointerId) minimapLook(e); });
+const mmUp = e => { if (mmPointer === e.pointerId) mmPointer = null; };
+mm.addEventListener('pointerup', mmUp); mm.addEventListener('pointercancel', mmUp); mm.addEventListener('lostpointercapture', mmUp);
 
 function drawTank(t){
   if (t.gone) return;
@@ -1631,6 +1853,9 @@ const PANEL = [
     { key: 'turnTime', label: '차례 제한 시간', min: 0, max: 60, step: 5, fmt: v => v ? v + '초' : '없음' },
     { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 차례가 늦음)' }
   ]},
+  { title: '화면', rows: [
+    { key: 'viewZoom', label: '화면 확대', min: 0.6, max: 1.6, step: 0.05, fmt: v => '×' + v.toFixed(2) }
+  ]},
   { title: '물리', rows: [
     { key: 'gravity', label: '중력', min: 200, max: 1000, step: 10, fmt: v => v },
     { key: 'windMax', label: '바람 최대 세기', min: 0, max: 220, step: 5, fmt: v => v },
@@ -1645,8 +1870,8 @@ const PANEL = [
     { key: 'shake', on: 'shakeOn', label: '화면 흔들림', min: 0, max: 2.5, step: 0.05, fmt: v => '×' + v.toFixed(2) },
     { key: 'slowFactor', on: 'slowOn', label: '명중 직전 느린 화면', min: 0.1, max: 1, step: 0.05, fmt: v => '×' + v.toFixed(2) },
     { key: 'slowRadius', label: '느려지기 시작하는 거리', min: 40, max: 400, step: 10, fmt: v => v },
-    { key: 'camZoom', on: 'camOn', label: '포탄 따라가는 카메라', min: 1, max: 1.8, step: 0.05, fmt: v => '×' + v.toFixed(2) },
-    { key: 'camDelay', label: '카메라가 따라가기 시작', min: 0, max: 1.2, step: 0.05, fmt: v => v.toFixed(2) + '초 뒤' },
+    { key: 'camZoom', on: 'camOn', label: '포탄 따라갈 때 확대', min: 1, max: 1.8, step: 0.05, fmt: v => '×' + v.toFixed(2) },
+    { key: 'camDelay', label: '확대가 시작되는 때', min: 0, max: 1.2, step: 0.05, fmt: v => v.toFixed(2) + '초 뒤' },
     { key: 'particles', on: 'particlesOn', label: '파편과 불꽃', min: 0, max: 2.5, step: 0.05, fmt: v => '×' + v.toFixed(2) },
     { key: 'recoil', on: 'recoilOn', label: '반동과 충전 떨림', min: 0, max: 2.5, step: 0.05, fmt: v => '×' + v.toFixed(2) },
     { on: 'flashOn', label: '섬광' },
@@ -1708,7 +1933,7 @@ $('#btn-menu').addEventListener('click', goHome);
 function goHome(){
   clearTimeout(overTimer);
   Snd.chargeStop(); Snd.whistleStop(); Snd.rumble(false);
-  phase = 'menu'; shells = []; $('#over').hidden = true; $('#start').hidden = false;
+  phase = 'menu'; shells = []; clearLook(); $('#over').hidden = true; $('#start').hidden = false;
 }
 function checkRotate(){
   const show = document.body.classList.contains('touch') && ch > cw && !portraitOk;
@@ -1756,7 +1981,7 @@ document.addEventListener('webkitfullscreenchange', syncFull);
 let lastT = performance.now();
 function frame(now){
   const rdt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-  checkTerrain(); update(rdt); render(); updateHUD();
+  checkTerrain(); update(rdt); render(); drawMinimap(now); updateHUD();
   requestAnimationFrame(frame);
 }
 function start(data){
@@ -1764,17 +1989,23 @@ function start(data){
   setTouch(coarse.matches);
   window.addEventListener('touchstart', () => setTouch(true), { passive: true, once: true });
   resize(); buildPanel(); syncFull();
-  if (window.ResizeObserver) new ResizeObserver(() => sizeDial()).observe(dialC);
+  if (window.ResizeObserver){
+    new ResizeObserver(() => sizeDial()).observe(dialC);
+    const ro = new ResizeObserver(() => { measureHud(); sizeMinimap(); });
+    ro.observe($('#console')); ro.observe($('#hud-top')); ro.observe(mm);
+  }
   // idle scene behind the start menu
-  const sx = [260, 1340]; genTerrain(sx); genScenery();
+  const sx = pickSpawns(); genTerrain(sx); genScenery();
   tanks = [makeTank(0, sx[0]), makeTank(1, sx[1])]; tanks.forEach(t => t.y = groundY(t.x, 0));
-  wind = 40; cam.y = H - (ch / baseScale()) / 2;
+  wind = 40; camSnap = true;
   renderCards();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { dialKey = ''; });
   requestAnimationFrame(frame);
 }
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
+  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm },
+  view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 // The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.
 window.claude?.hot?.snapshot?.(() => ({ settings: S }));

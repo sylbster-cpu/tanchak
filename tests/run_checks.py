@@ -123,6 +123,63 @@ with sync_playwright() as p:
     r = ev("({timer:document.getElementById('timer').hidden, pass:document.getElementById('btn-pass').hidden})")
     check("practice mode: no turn clock and no pass button", r["timer"] and r["pass"], r)
 
+    # ---- wide map, camera, minimap ----
+    r = ev("""(()=>{const T=window.__tc;T.startGame('duo');const {terr,back}=T.layers;const W=T.W,H=T.H;
+      const a=(c,x,y)=>c.getContext('2d').getImageData(x,y,1,1).data[3];
+      return {W, terrL:a(terr,3,H-3), terrR:a(terr,W-3,H-3), backR:a(back,W-3,H-3), skyR:a(terr,W-3,3)};})()""")
+    check("wide map: both terrain layers are painted across the full width", r["W"] > 1600 and r["terrL"] == r["terrR"] == r["backR"] == 255 and r["skyR"] == 0, r)
+
+    r = ev("""(()=>{const T=window.__tc;const o=[];for(let k=0;k<40;k++){T.startGame('ai');const [a,b]=T.get().tanks;o.push([b.x-a.x,a.y,b.y,a.x,b.x]);}
+      return {minGap:Math.round(Math.min(...o.map(v=>v[0]))), maxGap:Math.round(Math.max(...o.map(v=>v[0]))), maxY:Math.round(Math.max(...o.flatMap(v=>[v[1],v[2]]))),
+        minX:Math.min(...o.map(v=>v[3])), maxX:Math.max(...o.map(v=>v[4])), W:T.W};})()""")
+    check("spawns: reachable gap, inside the map, standing on ground",
+          850 <= r["minGap"] and r["maxGap"] <= 1300 and r["maxY"] < 650 and r["minX"] >= 150 and r["maxX"] <= r["W"] - 150, r)
+
+    r = ev("""(()=>{const T=window.__tc;const tt=T.S().turnTime;T.S().turnTime=0;T.startGame('duo');const res=[];
+      for(let turn=0;turn<2;turn++){ for(let i=0;i<150;i++)T.update(1/60); const g=T.get(),t=g.tanks[g.cur],v=T.view(),p=T.toScreen(t.x,t.y-15);
+        res.push({cur:g.cur,x:Math.round(p.x),y:Math.round(p.y),top:Math.round(v.playTop),bot:Math.round(v.playBot),cw:v.cw}); T.passTurn(false); }
+      T.S().turnTime=tt; return res;})()""")
+    check("camera keeps the current tank in the play area while aiming",
+          [o["cur"] for o in r] == [0, 1] and all(40 < o["x"] < o["cw"] - 40 and o["top"] < o["y"] < o["bot"] for o in r), r)
+
+    r = ev("""(()=>{const T=window.__tc;const tt=T.S().turnTime,sk=T.S().aiSkill;T.S().turnTime=0;T.S().aiSkill=1;const out=[];
+      for(let k=0;k<3;k++){T.startGame('duo');for(let i=0;i<60;i++)T.update(1/60);const a=T.get().tanks[0];const pl=T.planShot(a);a.sel='basic';a.facing=pl.facing;a.elev=pl.elev;T.fire(a,pl.power);
+        let n=0,off=0;for(let i=0;i<900&&T.get().phase==='flying';i++){T.update(1/60);for(const s of T.get().shells){n++;const p=T.toScreen(s.x,s.y);if(p.x<0||p.x>T.view().cw)off++;}}
+        out.push({frames:n,offscreen:off});}
+      T.S().turnTime=tt;T.S().aiSkill=sk; return out;})()""")
+    check("camera follows the shell across the map", all(o["frames"] > 60 and o["offscreen"] == 0 for o in r), r)
+
+    # Drag on the battlefield to look away, then a tap brings the camera back. Uses real input and the real frame loop.
+    ev("(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo');for(let i=0;i<150;i++)T.update(1/60);})()")
+    v0 = ev("window.__tc.view()")
+    pg.mouse.move(1150, 400); pg.mouse.down()
+    for x in range(1150, 100, -50): pg.mouse.move(x, 400)
+    pg.mouse.up(); time.sleep(0.3)
+    v1 = ev("window.__tc.view()")
+    pg.mouse.click(640, 380); time.sleep(1.6)
+    v2 = ev("""(()=>{const T=window.__tc,v=T.view(),t=T.get().tanks[0],p=T.toScreen(t.x,t.y-15);return {look:v.look,x:Math.round(p.x),cw:v.cw,markers:v.markers};})()""")
+    check("drag looks around (marker shows the tank), tap comes back",
+          v1["look"] is not None and v1["x"] - v0["x"] > 400 and any(m["i"] == 0 for m in v1["markers"]) and v2["look"] is None and 40 < v2["x"] < v2["cw"] - 40,
+          {"dx": round(v1["x"] - v0["x"]), "markers": v1["markers"], "after_tap": v2})
+
+    pg.mouse.move(1150, 400); pg.mouse.down(); pg.mouse.move(900, 400); pg.mouse.move(700, 400); pg.mouse.up()
+    r = ev("""(()=>{const T=window.__tc;const had=!!T.view().look;const a=T.get().tanks[0];T.fire(a,50);return {had,after:T.view().look};})()""")
+    check("firing hands the camera back from free look", r["had"] and r["after"] is None, r)
+
+    ev("(()=>{const T=window.__tc;T.startGame('duo');for(let i=0;i<30;i++)T.update(1/60);T.drawMinimap(performance.now()+1000);})()")
+    r = ev("""(()=>{const c=window.__tc.layers.minimap;const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let n=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)n++;
+      return {w:c.width,h:c.height,filled:+(n/(c.width*c.height)).toFixed(2)};})()""")
+    check("minimap draws the terrain", r["w"] > 100 and r["h"] > 20 and r["filled"] > 0.3, r)
+    box = pg.locator("#minimap").bounding_box()
+    pg.mouse.click(box["x"] + box["width"] - 3, box["y"] + box["height"] / 2); time.sleep(1.6)
+    r = ev("""(()=>{const T=window.__tc,v=T.view();return {x:Math.round(v.x), rightEdge:Math.round(T.W - v.cw/v.s/2), look:!!v.look};})()""")
+    check("pressing the minimap's right end shows the right end of the map", r["look"] and abs(r["x"] - r["rightEdge"]) < 30, r)
+    ev("window.__tc.S().turnTime=20")
+
+    r = ev("""(()=>{const T=window.__tc;const ms=[];for(let k=0;k<10;k++){T.startGame('ai');const t0=performance.now();T.planShot(T.get().tanks[1]);ms.push(performance.now()-t0);}
+      const t1=performance.now();T.paintTerrain();return {planMax:Math.round(Math.max(...ms)),planAvg:Math.round(ms.reduce((a,b)=>a+b)/ms.length),paint:Math.round(performance.now()-t1)};})()""")
+    check("computer planning and terrain repaint stay quick on this machine", r["planMax"] < 150 and r["paint"] < 400, r)
+
     check("no page errors", not errs, errs[:5])
     b.close()
 
