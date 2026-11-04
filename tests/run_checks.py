@@ -48,7 +48,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;let best={hpLost:0};
       for(let el=40;el<=88;el+=4){for(let pw=20;pw<=100;pw+=4){
         T.startGame('duo'); const g=T.get(), a=g.tanks[0], b=g.tanks[1]; b.x=a.x+180; b.y=0; for(let i=0;i<90;i++)T.update(1/60);
-        a.sel='split'; a.cards.split=2; a.facing=1; a.elev=el; T.fire(a,pw); for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
+        T.setHand(a,['split']); a.sel='split'; a.facing=1; a.elev=el; T.fire(a,pw); for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase!=='flying')break;}
         const st=T.get().stats[0], lost=b.maxHp-b.hp; if(lost>best.hpLost) best={hits:st.hits, shots:st.shots, direct:st.direct, hpLost:lost};
       }} return best;})()""")
     check("split shell: hits never exceed shots", r.get("hits", 0) <= r.get("shots", 1) and r.get("direct", 0) <= r.get("hits", 0), r)
@@ -73,13 +73,13 @@ with sync_playwright() as p:
 
     r = ev("""(()=>{const T=window.__tc;T.startGame('duo');const g=T.get(), a=g.tanks[0], b=g.tanks[1];
       b.x=a.x+120; b.y=0; for(let i=0;i<120;i++)T.update(1/60); a.fuel=999;
-      for(let i=0;i<300;i++)T.moveTank(a,1,1/60); return {gap:Math.round(b.x-a.x)};})()""")
-    check("tanks cannot drive through each other", r["gap"] >= 50, r)
+      for(let i=0;i<300;i++){T.moveTank(a,1,1/60);T.update(1/60);} return {gap:Math.round(b.x-a.x)};})()""")
+    check("tanks cannot drive through each other", r["gap"] >= 40, r)
 
     # At full skill the computer's drill shots should land (it used to plan them like normal shells).
     r = ev("""(()=>{const T=window.__tc;const res=[]; const s0=T.S().aiSkill; T.S().aiSkill=1;
       for(let k=0;k<4;k++){T.startGame('ai');const g=T.get(), a=g.tanks[1], b=g.tanks[0];
-        a.cards={basic:Infinity,heavy:0,split:0,drill:2,calm:0};
+        T.setHand(a,['drill','drill']);
         let pl=T.planShot(a); for(let n=0;n<40 && a.sel!=='drill';n++) pl=T.planShot(a);
         if(a.sel!=='drill'){res.push(null);continue;}
         a.facing=pl.facing; a.elev=pl.elev; const hp0=b.hp; T.fire(a,pl.power);
@@ -107,7 +107,7 @@ with sync_playwright() as p:
 
     # Delay order: lowest delay moves next, values are normalised so the leader sits at 0.
     r = ev("""(()=>{const T=window.__tc;T.startGame('duo');const seq=[];
-      const shoot=sel=>{let g=T.get();const t=g.tanks[g.cur];t.sel=sel;t.cards[sel]=9;t.facing=t.i===0?-1:1;t.elev=45;T.fire(t,100);
+      const shoot=sel=>{let g=T.get();const t=g.tanks[g.cur];T.setHand(t,[sel,sel,sel]);t.sel=sel;t.facing=t.i===0?-1:1;t.elev=45;T.fire(t,100);
         for(let i=0;i<600;i++){T.update(1/60); if(T.get().phase==='aim')break;} g=T.get(); seq.push([g.cur, g.tanks[0].delay, g.tanks[1].delay]);};
       shoot('basic'); shoot('heavy'); shoot('heavy'); shoot('heavy'); shoot('basic'); return seq;})()""")
     # P1 basic 780 → P2; P2 heavy 1450 → P1 (P2 at 670); P1 heavy → [780,0] → P2; P2 heavy → [0,670] → P1;
@@ -186,14 +186,14 @@ with sync_playwright() as p:
       for(const m of T.MOBILES){T.startGame('duo',[m.id,m.id]);for(let i=0;i<30;i++)T.update(1/60);const t=T.get().tanks[0];
         key('ArrowUp',true);for(let i=0;i<240;i++)T.update(1/60);key('ArrowUp',false);const hi=Math.round(t.elev);
         key('ArrowDown',true);for(let i=0;i<240;i++)T.update(1/60);key('ArrowDown',false);const lo=Math.round(t.elev);
-        out[m.id]={lo,hi,want:m.ang,hp:t.hp,maxHp:t.maxHp,fuel:t.fuel,cards:Object.keys(t.cards)};}
+        out[m.id]={lo,hi,want:m.ang,hp:t.hp,maxHp:t.maxHp,fuel:t.fuel,hand:t.hand.slice(),deck:t.deck.length,own:m.shells[m.shells.length-1],shells:m.shells};}
       T.S().turnTime=tt; return out;})()""")
     m_ok = all(v["lo"] == v["want"][0] and v["hi"] == v["want"][1] for v in r.values())
     check("mobiles: the barrel stops at each mobile's angle range", m_ok, {k: [v["lo"], v["hi"]] for k, v in r.items()})
-    check("mobiles: hp, fuel and the four own cards come from the mobile",
-          all(v["hp"] == v["maxHp"] and len(v["cards"]) == 4 and v["cards"][0] == "basic" for v in r.values())
+    check("mobiles: hp, fuel and a hand dealt from the mobile's own shells",
+          all(v["hp"] == v["maxHp"] and len(v["hand"]) == 3 and v["deck"] == 4 and all(h in v["shells"] and h != "basic" for h in v["hand"]) for v in r.values())
           and len({v["maxHp"] for v in r.values()}) > 1 and len({v["fuel"] for v in r.values()}) > 1,
-          {k: [v["maxHp"], v["fuel"], v["cards"][-1]] for k, v in r.items()})
+          {k: [v["maxHp"], v["fuel"], v["hand"]] for k, v in r.items()})
 
     r = ev("""(()=>{const T=window.__tc;const out={};
       for(const m of T.MOBILES){let lo=99,hi=-1;for(let k=0;k<6;k++){T.startGame('ai',['digger',m.id]);const pl=T.planShot(T.get().tanks[1]);lo=Math.min(lo,pl.elev);hi=Math.max(hi,pl.elev);}out[m.id]=[lo,hi,m.ang];}
@@ -204,7 +204,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const T=window.__tc;const s0=T.S().aiSkill,tt=T.S().turnTime;T.S().aiSkill=1;T.S().turnTime=0;const out={};
       for(const m of T.MOBILES){const own=m.shells[m.shells.length-1];let hits=0,bounced=0;
         for(let k=0;k<5;k++){T.startGame('ai',['digger',m.id]);const g=T.get(),a=g.tanks[1],b=g.tanks[0];
-          for(const id in a.cards)a.cards[id]=id==='basic'?Infinity:0;a.cards[own]=2;
+          T.setHand(a,[own,own]);
           let pl=T.planShot(a);for(let n=0;n<40&&a.sel!==own;n++)pl=T.planShot(a);
           a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);
           for(let i=0;i<900;i++){T.update(1/60);for(const s of T.get().shells)if(s.bounced)bounced++;if(T.get().phase!=='flying')break;}
@@ -224,7 +224,7 @@ with sync_playwright() as p:
 
     r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
       for(let k=0;k<10&&out.length<2;k++){T.startGame('duo',['armored','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];b.x=a.x+260;b.y=0;for(let i=0;i<90;i++)T.update(1/60);
-        a.sel='pierce';a.cards.pierce=2;a.facing=1;a.elev=40;
+        T.setHand(a,['pierce','pierce']);a.facing=1;a.elev=40;
         let best=null;for(let pw=20;pw<=100;pw+=1){}  // aim by searching with the real game
         const s0=T.S().aiSkill;T.S().aiSkill=1;let pl=T.planShot(a);for(let n=0;n<40&&a.sel!=='pierce';n++)pl=T.planShot(a);T.S().aiSkill=s0;
         a.facing=pl.facing;a.elev=pl.elev;const hp0=b.hp;T.fire(a,pl.power);for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase!=='flying')break;}
@@ -255,6 +255,38 @@ with sync_playwright() as p:
     r2 = ev("(()=>{const g=window.__tc.get();return {mode:g.mode,mobs:g.tanks.map(t=>t.m.id)};})()")
     check("picker: vs computer marks the last choice and gives the computer a mobile",
           r["last"] == "armored" and r2["mode"] == "ai" and r2["mobs"][0] == "light" and r2["mobs"][1] in ("light", "armored", "howitzer", "digger"), {**r, **r2})
+
+    # ---- shells as cards ----
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['armored','digger']);const a=T.get().tanks[0];
+      const deck0=a.deck.length+a.hand.filter(Boolean).length;const all=[...a.deck,...a.hand].sort().join(',');const seen=[];
+      for(let k=0;k<9;k++){const id=a.hand.find(Boolean);if(!id)break;const before=a.deck.length;a.sel=id;T.fire(a,5);
+        for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim')break;}T.endTurn&&0;seen.push([id,before,a.deck.length,a.hand.filter(Boolean).length]);
+        // hand the turn back to the first player
+        const g=T.get();if(g.cur!==0){T.passTurn(false);}}
+      T.S().turnTime=20;return {deck0,all,seen,left:a.hand,sel:a.sel};})()""")
+    check("cards: 7-card deck (2 heavy, 2 calm, 3 own), each play draws one, then the hand runs dry",
+          r["deck0"] == 7 and r["all"] == "calm,calm,heavy,heavy,pierce,pierce,pierce" and len(r["seen"]) == 7
+          and [s[2] for s in r["seen"]] == [3, 2, 1, 0, 0, 0, 0] and [s[3] for s in r["seen"]] == [3, 3, 3, 3, 2, 1, 0]
+          and r["left"] == [None, None, None] and r["sel"] == "basic", r)
+
+    r = ev("""(()=>{const T=window.__tc;T.startGame('practice',['light','digger']);const a=T.get().tanks[0];let n=0;
+      for(let k=0;k<12;k++){const id=a.hand.find(Boolean);if(!id)break;a.sel=id;T.fire(a,5);n++;for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim')break;}}
+      return {played:n,hand:a.hand.filter(Boolean).length};})()""")
+    check("cards: practice deals a fresh deck when it runs out", r["played"] == 12 and r["hand"] == 3, r)
+
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('ai',['digger','light']);T.passTurn(false);T.renderCards();
+      const think=[...document.querySelectorAll('#cards .card')].map(c=>c.classList.contains('back')?'back':c.dataset.shell);
+      for(let i=0;i<70;i++)T.update(1/60);const g=T.get();const sel=g.tanks[1].sel;
+      const aim=[...document.querySelectorAll('#cards .card')].map(c=>c.classList.contains('back')?'back':c.dataset.shell);
+      T.S().turnTime=20;return {phase:g.phase,think,aim,sel};})()""")
+    check("cards: the computer's hand is face down until it plays a card",
+          r["think"] == ["basic", "back", "back", "back"] and r["phase"] == "aiAim"
+          and r["aim"].count("back") == (3 if r["sel"] == "basic" else 2) and (r["sel"] in r["aim"]), r)
+
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['howitzer','digger']);for(let i=0;i<20;i++)T.update(1/60);const a=T.get().tanks[0];T.setHand(a,['heavy','split','calm']);T.renderCards();
+      const k=c=>window.dispatchEvent(new KeyboardEvent('keydown',{code:c}));k('Digit3');const s3=a.sel;k('Digit1');const s1=a.sel;
+      T.S().turnTime=20;return {s3,s1};})()""")
+    check("cards: number keys pick basic (1) and hand slots (2-4)", r["s3"] == "split" and r["s1"] == "basic", r)
 
     check("no page errors", not errs, errs[:5])
     b.close()

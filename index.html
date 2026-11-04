@@ -130,6 +130,13 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .card .k{position:absolute;top:2px;right:6px;font-size:10px;color:var(--muted)}
 .card.sel{border-color:var(--brass);background:linear-gradient(180deg,#5a4c26,#2e2716);transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 2px rgba(226,169,72,.3),0 4px 0 rgba(0,0,0,.5)}
 .card:disabled{opacity:.42;cursor:default}
+.card.empty{background:transparent;border:2px dashed rgba(226,169,72,.25);box-shadow:none}
+.card.back{background:repeating-linear-gradient(135deg,#3a2f17 0 6px,#2a2210 6px 12px);border-color:#5f4512;opacity:.85}
+.card.fresh{animation:fresh 1.4s ease-out}
+@keyframes fresh{0%{transform:translateY(-8px);box-shadow:0 0 0 3px rgba(255,248,225,.9),0 0 22px rgba(255,210,122,.9)}100%{transform:none}}
+.deck{flex:none;position:relative;width:30px;height:46px;align-self:center;border-radius:7px;display:grid;place-items:center;
+  background:repeating-linear-gradient(135deg,#3a2f17 0 5px,#2a2210 5px 10px);border:2px solid #5f4512;box-shadow:2px 2px 0 #1b1408,4px 4px 0 rgba(0,0,0,.35)}
+.deck b{font-family:var(--display);font-weight:400;font-size:15px;color:var(--amber);text-shadow:0 1px 0 #000}
 .card.sel:disabled{opacity:.8}
 body.touch .card .k{display:none}
 .c-fire{display:flex;align-items:center;gap:10px}
@@ -163,7 +170,7 @@ body.touch #btn-fire{display:grid}
   #gauge{height:20px}
   .lcd b{font-size:16px}
   #pow-lcd{min-width:48px}
-  .card{height:44px}
+  .card{height:44px} .deck{height:38px;width:26px}
   .card .well{width:28px;height:28px} .card .well svg{width:18px;height:18px}
   #btn-fire{width:68px;height:68px;font-size:18px}
   .tbtn{width:42px;height:42px}
@@ -268,7 +275,7 @@ body.touch #btn-fire{display:grid}
 .prow.only{grid-template-columns:auto 1fr}
 #rotate{z-index:60}
 #rotate .sheet{text-align:center;justify-items:center}
-@media (prefers-reduced-motion:reduce){ #banner.show{animation-duration:.01s} .card,.hpbar i,.hpbar b{transition:none} }
+@media (prefers-reduced-motion:reduce){ #banner.show{animation-duration:.01s} .card,.hpbar i,.hpbar b{transition:none} .card.fresh{animation:none} }
 </style>
 </head>
 <body>
@@ -333,7 +340,7 @@ body.touch #btn-fire{display:grid}
     <div id="cards" role="toolbar" aria-label="포탄 고르기"></div>
   </div>
   <div class="c-fire">
-    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 · P 넘기기 · T 조율판</small></div>
+    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 카드 · P 넘기기 · T 조율판</small></div>
     <div class="tpad angpad">
       <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
       <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
@@ -360,7 +367,7 @@ body.touch #btn-fire{display:grid}
       <button class="mode" type="button" data-mode="duo"><b>둘이서 번갈아</b><span>한 기기로 1P와 2P</span></button>
       <button class="mode" type="button" data-mode="practice"><b>과녁 연습</b><span>상대가 쏘지 않아 손맛 조율에 좋음</span></button>
     </div>
-    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~4 포탄. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
+    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다. 기본탄 말고는 카드로 받습니다. 손패 3장 중 하나를 쓰면 덱에서 새로 1장을 뽑습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1 기본탄·2~4 손패. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
   </div>
 </section>
 
@@ -432,7 +439,7 @@ const DEFAULTS = {
   recoil: 1.0, recoilOn: true,
   flashOn: true, numbersOn: true, trailOn: true,
   volume: 0.7, soundOn: true, vibrateOn: true,
-  turnTime: 20, delayOn: true,
+  turnTime: 20, delayOn: true, handSize: 3,
   aiSkill: 0.45
 };
 let S = Object.assign({}, DEFAULTS);
@@ -717,11 +724,30 @@ const COLORS = [
   { main: '#ff5b49', dark: '#a92a1f', light: '#ffb0a4', ink: '#5a120b' }
 ];
 
+// Shells come as cards. The basic shell is always there; the others are dealt from a per-game deck of
+// DECK_MIX into a hand of S.handSize cards. Playing one draws the next from the deck; when the deck is empty
+// the slot stays empty (practice mode deals a fresh deck instead).
+const DECK_MIX = [['heavy', 2], ['calm', 2], ['own', 3]];
+function buildDeck(m){
+  const own = m.shells[m.shells.length - 1], d = [];
+  for (const [id, n] of DECK_MIX) for (let k = 0; k < n; k++) d.push(id === 'own' ? own : id);
+  for (let i = d.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+  return d;
+}
+function hasShell(t, id){ return id === 'basic' || t.hand.includes(id); }
+function playCard(t, id){
+  const k = t.hand.indexOf(id);
+  if (id === 'basic' || k < 0) return;
+  if (!t.deck.length && mode === 'practice') t.deck = buildDeck(t.m);
+  t.hand[k] = t.deck.length ? t.deck.pop() : null;
+  t.fresh = t.hand[k] ? k : -1;
+}
 function makeTank(i, x, mid){
   const m = MOBILE[mid] || MOBILE[DEFAULT_PICKS[i]];
-  const cards = {}; m.shells.forEach(id => cards[id] = SHELL[id].uses);
+  const deck = buildDeck(m), hand = [];
+  for (let k = 0; k < S.handSize; k++) hand.push(deck.length ? deck.pop() : null);
   return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
-    fuel: m.fuel, cards, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+    fuel: m.fuel, hand, deck, fresh: -1, freshSlot: -1, freshUntil: 0, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
@@ -754,7 +780,8 @@ function beginTurn(again){
   wind = clamp(prev * 0.35 + rand(-1, 1) * 0.85, -1, 1) * S.windMax;
   const t = tanks[cur];
   t.fuel = t.m.fuel;
-  if (!(t.cards[t.sel] > 0)) t.sel = 'basic';
+  if (!hasShell(t, t.sel)) t.sel = 'basic';
+  if (t.fresh >= 0){ t.freshSlot = t.fresh; t.fresh = -1; t.freshUntil = performance.now() + 1600; }   // light up the card drawn last time
   power = 0; powerDir = 1;
   phaseT = 0;
   phase = isHuman(cur) ? 'aim' : 'aiThink';
@@ -831,14 +858,14 @@ function aimDir(t, facing, rel){ const e = worldElev(t, facing, rel) * DEG; retu
 function fire(t, p){
   const def = SHELL[t.sel];
   t.delay += def.delay + Math.floor(turnT) * 10;
-  if (t.cards[t.sel] !== Infinity) t.cards[t.sel]--;
+  playCard(t, t.sel);
   const pv = pivot(t), dir = aimDir(t, t.facing, t.elev);
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
   const shot = { owner: t, hit: false, direct: false };
   shells.push({ x: pv.x + dir.x * MUZZLE, y: pv.y + dir.y * MUZZLE, vx: dir.x * v, vy: dir.y * v, type: t.sel, owner: t, shot, age: 0, trail: [], dead: false, drilling: false, drillLeft: 0, carveAcc: 0, splitDone: false, bounced: false, bounceT: 0 });
   t.lastPower = p; t.lastElev = t.elev; t.lastFacing = t.facing;
   stats[t.i].shots++;
-  if (!(t.cards[t.sel] > 0)) t.sel = 'basic';
+  if (!hasShell(t, t.sel)) t.sel = 'basic';
   renderCards();
   if (J('recoil')){
     t.recoil = 1;
@@ -973,7 +1000,7 @@ function simulate(t, facing, rel, p, def, target){
 }
 function planShot(t){
   const target = tanks[1 - t.i];
-  const avail = Object.keys(t.cards).filter(id => id !== 'basic' && t.cards[id] > 0);
+  const avail = [...new Set(t.hand.filter(id => id && id !== 'basic'))];
   t.sel = (avail.length && Math.random() < 0.45) ? avail[(Math.random() * avail.length) | 0] : 'basic';
   const def = SHELL[t.sel];
   const facing = target.x >= t.x ? 1 : -1;
@@ -1026,7 +1053,7 @@ window.addEventListener('keydown', e => {
     case 'KeyT': togglePanel(); break;
     case 'KeyP': passTurn(false); break;
     default:
-      if (/^Digit[1-9]$/.test(e.code) && tanks[cur]){ const id = tanks[cur].m.shells[+e.code.slice(5) - 1]; if (id) selectCard(id); }
+      if (/^Digit[1-9]$/.test(e.code) && tanks[cur]){ const id = ['basic', ...tanks[cur].hand][+e.code.slice(5) - 1]; if (id) selectCard(id); }
   }
 });
 window.addEventListener('keyup', e => {
@@ -1063,17 +1090,25 @@ function setTouch(on){ document.body.classList.toggle('touch', on); checkRotate(
 function renderCards(){
   const t = tanks[cur]; const box = $('#cards');
   if (!t){ box.innerHTML = ''; return; }
-  box.innerHTML = t.m.shells.map(id => SHELL[id]).map((s, i) => {
-    const left = t.cards[s.id], none = !(left > 0);
-    const dis = none || !canControl();
-    return `<button class="card${t.sel === s.id ? ' sel' : ''}" type="button" data-shell="${s.id}" ${dis ? 'disabled' : ''} aria-pressed="${t.sel === s.id}" aria-label="${s.name}, ${left === Infinity ? '무제한' : left + '발 남음'}, 딜레이 ${s.delay}">
-      <span class="k">${i + 1}</span><span class="well">${ICONS[s.id]}<span class="bd">${left === Infinity ? '∞' : left}</span></span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${left === Infinity ? '∞' : left + '발'}<span class="dl"> · ${s.delay}</span></span></span></button>`;
-  }).join('');
+  // the computer's hand stays face down; the card it chose turns up once it starts aiming
+  const hidden = !isHuman(cur), shown = phase === 'aiAim' || phase === 'aiCharge' || phase === 'flying';
+  const ctl = canControl(), now = performance.now();
+  let selDone = false;
+  const slot = (id, i) => {
+    if (!id) return `<div class="card empty" aria-label="빈 칸"><span class="k">${i + 1}</span></div>`;
+    const s = SHELL[id], basic = id === 'basic', isSel = t.sel === id && !selDone;
+    if (isSel) selDone = true;
+    if (hidden && !basic && !(isSel && shown)) return `<div class="card back" aria-label="가려진 카드"></div>`;
+    const fresh = !basic && i - 1 === t.freshSlot && now < t.freshUntil;
+    return `<button class="card${isSel ? ' sel' : ''}${fresh ? ' fresh' : ''}" type="button" data-shell="${id}" ${ctl ? '' : 'disabled'} aria-pressed="${isSel}" aria-label="${s.name}, ${basic ? '무제한' : '카드'}, 딜레이 ${s.delay}">
+      <span class="k">${i + 1}</span><span class="well">${ICONS[id]}${basic ? '<span class="bd">∞</span>' : ''}</span><span class="txt"><span class="nm">${s.name}</span><span class="ct">${basic ? '∞ · ' : ''}<span class="dl">${s.delay}</span></span></span></button>`;
+  };
+  box.innerHTML = ['basic', ...t.hand].map(slot).join('') + `<div class="deck" title="덱에 남은 카드" aria-label="덱에 ${t.deck.length}장 남음"><b>${t.deck.length}</b></div>`;
 }
 $('#cards').addEventListener('click', e => { const b = e.target.closest('.card'); if (b){ selectCard(b.dataset.shell); b.blur(); } });
 function selectCard(id){
   const t = tanks[cur];
-  if (!t || !isHuman(cur) || phase !== 'aim' || !(t.cards[id] > 0)) return;
+  if (!t || !isHuman(cur) || phase !== 'aim' || !hasShell(t, id)) return;
   if (t.sel !== id){ t.sel = id; Snd.tick(0.6); renderCards(); const s = SHELL[id]; toast(`${s.name} · ${s.desc}` + (S.delayOn && mode !== 'practice' ? ` · 딜레이 ${s.delay}` : ''), 1800); }
 }
 
@@ -1141,7 +1176,7 @@ function updateControl(dt, rdt){
 
   if (phase === 'aiThink'){
     phaseT += rdt;
-    if (phaseT > 0.75){ aiPlan = planShot(t); t.facing = aiPlan.facing; renderCards(); phase = 'aiAim'; phaseT = 0; }
+    if (phaseT > 0.75){ aiPlan = planShot(t); t.facing = aiPlan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
   } else if (phase === 'aiAim'){
     const diff = aiPlan.elev - t.elev, step = 40 * rdt;
     if (Math.abs(diff) <= step){ t.elev = aiPlan.elev; phaseT += rdt; if (phaseT > 0.35){ phase = 'aiCharge'; power = 0; powerDir = 1; Snd.chargeStart(); } }
@@ -1987,7 +2022,8 @@ function buzz(p){ if (J('vibrate') && navigator.vibrate){ try { navigator.vibrat
 const PANEL = [
   { title: '규칙', rows: [
     { key: 'turnTime', label: '차례 제한 시간', min: 0, max: 60, step: 5, fmt: v => v ? v + '초' : '없음' },
-    { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 차례가 늦음)' }
+    { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 차례가 늦음)' },
+    { key: 'handSize', label: '손패 장수(다음 판부터)', min: 1, max: 4, step: 1, fmt: v => v + '장' }
   ]},
   { title: '화면', rows: [
     { key: 'viewZoom', label: '화면 확대', min: 0.6, max: 1.6, step: 0.05, fmt: v => '×' + v.toFixed(2) }
@@ -2203,7 +2239,8 @@ function start(data){
 }
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
-  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick,
+  toScreen, paintTerrain, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
+  setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; },
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
   get: () => ({ phase, cur, mode, tanks, shells, parts, ops, stats, timers, wind, hitStop, turnCount, turnT }), S: () => S };
 // The two lines below only matter when the page runs as a claude.ai artifact; elsewhere they do nothing.
