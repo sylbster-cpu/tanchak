@@ -316,13 +316,14 @@ with sync_playwright() as p:
     # ---- computer: difficulty, moving, delay-aware shells, thinking spread over frames ----
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),tt=S.turnTime,sk=S.aiSkill;S.turnTime=0;const out={};const mobs=T.MOBILES.map(m=>m.id);let worst=0;
       for(const [name,v] of [['easy',0.2],['hard',0.85]]){S.aiSkill=v;let hits=0,n=0;
-        for(let k=0;k<30;k++){T.startGame('ai',[mobs[k%4],mobs[(k>>2)%4]]);T.passTurn(false);const me=T.get().tanks[0],hp0=me.hp;let fired=false;
+        for(let k=0;k<60;k++){T.startGame('ai',[mobs[k%4],mobs[(k>>2)%4]]);T.passTurn(false);const me=T.get().tanks[0],hp0=me.hp;let fired=false;
           for(let i=0;i<60*12;i++){const t0=performance.now();T.update(1/60);const ms=performance.now()-t0;const ph=T.get().phase;if(ph==='aiThink')worst=Math.max(worst,ms);
             if(ph==='flying')fired=true;if(fired&&(ph==='aim'||ph==='over'))break;}
           n++;if(me.hp<hp0)hits++;}
         out[name]=+(hits/n).toFixed(2);}
       S.turnTime=tt;S.aiSkill=sk;out.worstThinkFrameMs=Math.round(worst);return out;})()""")
-    check("difficulty: hard hits clearly more often than easy", r["hard"] - r["easy"] >= 0.3, r)
+    # 120 games per level measured easy ~0.32, hard ~0.80-0.85; 60 games and a 0.25 margin keep chance failures rare
+    check("difficulty: hard hits clearly more often than easy", r["hard"] - r["easy"] >= 0.25 - 1e-9, r)
     check("computer thinks a few ms per frame instead of freezing one frame", r["worstThinkFrameMs"] < 20, r)
 
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),wm=S.windMax,tt=S.turnTime,sk=S.aiSkill;S.windMax=0;S.turnTime=0;S.aiSkill=0.85;const out=[];
