@@ -243,7 +243,7 @@ with sync_playwright() as p:
     r = ev("""(()=>{const g=window.__tc.get();return {mode:g.mode,phase:g.phase,mobs:g.tanks.map(t=>t.m.id),pick:!document.getElementById('pick').hidden,
       saved:localStorage.getItem('tanchak-mobile-v1'),badge:document.querySelector('#hp0 .badge').title};})()""")
     check("picker: 1P then 2P, back steps back, choices start the game and are remembered",
-          t1 == "1P 기체 고르기" and t2 == "2P 기체 고르기" and t3 == "1P 기체 고르기" and r["mobs"] == ["armored", "howitzer"]
+          t1 == "1P 탱크 고르기" and t2 == "2P 탱크 고르기" and t3 == "1P 탱크 고르기" and r["mobs"] == ["armored", "howitzer"]
           and not r["pick"] and r["saved"] == '["armored","howitzer"]' and r["badge"] == "중전차",
           {"titles": [t1, t2, t3], **r})
     ev("document.getElementById('btn-menu').click()"); time.sleep(0.2)
@@ -369,6 +369,20 @@ with sync_playwright() as p:
     pg.set_viewport_size({"width": 1280, "height": 720})
     time.sleep(0.3)
     check("tall screen, high shot: the world's bottom never floats above the console", r["worstGapAboveConsole"] <= 1, r)
+
+    # ---- genre terms and the touch latency check ----
+    ev("document.getElementById('btn-menu').click()"); time.sleep(0.2)
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['light','digger']);
+      const b=document.getElementById('banner').textContent;T.S().turnTime=20;
+      return {banner:b,tune:document.getElementById('btn-tune').textContent,cap:document.querySelector('.power-row .cap').textContent,
+        item:document.getElementById('fx-btn').textContent.includes('아이템'),font:getComputedStyle(document.querySelector('.chip')).fontFamily};})()""")
+    check("genre terms: 턴, 설정, 파워, 아이템; labels in Jua", r["banner"] == "1P 턴" and r["tune"] == "설정" and r["cap"] == "파워" and r["item"] and r["font"].startswith('Jua'), r)
+
+    ev("window.__tc.S().latencyOn=true; window.__tc.lat.list.length=0")
+    pg.mouse.click(640, 380); time.sleep(0.3)
+    r = ev("({n: window.__tc.lat.list.length, ms: window.__tc.lat.list.map(Math.round)})")
+    ev("window.__tc.S().latencyOn=false")
+    check("touch latency check records a time after a press", r["n"] >= 1 and all(0 <= v < 500 for v in r["ms"]), r)
 
     check("no page errors", not errs, errs[:5])
     b.close()

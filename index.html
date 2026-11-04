@@ -8,7 +8,7 @@
 <meta name="color-scheme" content="dark">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
 <style>
 /* Layout: a full-bleed cartoon battlefield on one canvas. A solid field-artillery console (olive steel,
    brass trim, amber readouts) docks along the bottom edge; player plates and the wind meter sit on the top edge.
@@ -22,13 +22,14 @@
   --blue:#3f86ff; --blue-dark:#1d4bb0; --red:#ff5b49; --red-dark:#a92a1f;
   --fire:#ff7a2f;
   --display:'Black Han Sans','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
-  --ui:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+  --ui:'Jua','IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+  --text:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
   color-scheme:dark;
 }
 @media (prefers-color-scheme:dark){ :root{color-scheme:dark} }
 [hidden]{display:none!important}
 html,body{height:100%}
-body{margin:0;background:var(--sky);color:var(--paper);font-family:var(--ui);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--sky);color:var(--paper);font-family:var(--ui);font-synthesis:none;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;touch-action:none;-webkit-appearance:none;appearance:none}
 button:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
@@ -145,7 +146,7 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 .fxcard .well{grid-row:1/4;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--lcd);border:1.5px solid #000;color:#ffd27a}
 .fxcard .well svg{width:22px;height:22px}
 .fxcard b{font-family:var(--display);font-weight:400;font-size:16px}
-.fxcard .d{font-size:11.5px;line-height:1.35;color:var(--muted)}
+.fxcard .d{font-family:var(--text);font-size:11.5px;line-height:1.35;color:var(--muted)}
 .fxcard .c{font-size:11px;font-weight:700;color:var(--amber)}
 .fxcard .k{position:absolute;top:4px;right:7px;font-size:10px;color:var(--muted)}
 .fxcard.on{border-color:#ffd27a;background:linear-gradient(180deg,#7a5a1c,#3d2c0d)}
@@ -237,7 +238,7 @@ body.touch #btn-fire{display:grid}
 .eyebrow{margin:0;font-size:12px;font-weight:700;letter-spacing:.26em;color:var(--brass)}
 .title{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(56px,10vw,92px);line-height:1;letter-spacing:.02em;color:#ffd27a;-webkit-text-stroke:3px #1a1208;paint-order:stroke fill;text-shadow:0 5px 0 #1a1208,0 10px 24px rgba(0,0,0,.35)}
 .sheet h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(40px,8vw,62px);line-height:1;color:#ffd27a;-webkit-text-stroke:2px #1a1208;paint-order:stroke fill;text-shadow:0 4px 0 #1a1208}
-.lede{margin:0;font-size:15px;line-height:1.6;max-width:46ch}
+.lede{margin:0;font-family:var(--text);font-size:15px;line-height:1.6;max-width:46ch}
 .modes{display:grid;gap:9px}
 .modes.row{grid-template-columns:1fr 1fr}
 .mode{display:grid;gap:2px;text-align:left;padding:12px 16px;border-radius:13px;background:linear-gradient(180deg,var(--steel-3),var(--steel-2));border:2px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 4px 0 rgba(0,0,0,.45)}
@@ -246,8 +247,8 @@ body.touch #btn-fire{display:grid}
 .mode:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.45)}
 .mode.primary{background:linear-gradient(180deg,#f6cd78,var(--brass));color:#1a1408;border-color:#4f3a10;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 0 #5f4512}
 .mode.primary span{color:rgba(26,20,8,.72)}
-.howto{margin:0;font-size:12.5px;line-height:1.7;color:var(--muted)}
-#over-stats{margin:0;font-size:14px;line-height:1.75;color:var(--muted);font-variant-numeric:tabular-nums}
+.howto{margin:0;font-family:var(--text);font-size:12.5px;line-height:1.7;color:var(--muted)}
+#over-stats{margin:0;font-family:var(--text);font-size:14px;line-height:1.75;color:var(--muted);font-variant-numeric:tabular-nums}
 .p2 .badge svg{transform:scaleX(-1)}
 /* mobile picker */
 .sheet.pick{width:min(860px,100%)}
@@ -262,7 +263,7 @@ body.touch #btn-fire{display:grid}
 .mob.last{border-color:var(--brass);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 2px rgba(226,169,72,.3),0 4px 0 rgba(0,0,0,.45)}
 .mob canvas{display:block;width:100%;height:64px}
 .mob b{font-family:var(--display);font-weight:400;font-size:21px;line-height:1}
-.mob .role{font-size:12px;line-height:1.35;color:var(--muted);min-height:2.7em}
+.mob .role{font-family:var(--text);font-size:12px;line-height:1.35;color:var(--muted);min-height:2.7em}
 .mob dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;margin:0;align-items:center;font-size:11.5px}
 .mob dt{font-weight:700;color:var(--brass);white-space:nowrap}
 .mob dd{margin:0;display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -273,7 +274,7 @@ body.touch #btn-fire{display:grid}
 @media (max-height:460px){ .sheet{padding:16px;gap:10px} .brand svg{width:44px;height:44px} .title{font-size:50px} .lede{font-size:13px} .mode{padding:8px 12px} .mode b{font-size:17px} .modes:not(.row){grid-template-columns:repeat(3,1fr)} .howto{display:none} }
 
 /* ---------- tuning panel ---------- */
-#panel{position:fixed;top:0;right:0;bottom:0;z-index:30;width:min(380px,94vw);display:grid;align-content:start;gap:12px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-user-select:text;user-select:text;
+#panel{font-family:var(--text);position:fixed;top:0;right:0;bottom:0;z-index:30;width:min(380px,94vw);display:grid;align-content:start;gap:12px;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-user-select:text;user-select:text;
   padding:calc(14px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) 16px;
   background:linear-gradient(180deg,#232c25,#171d19);border-left:3px solid var(--edge);box-shadow:-10px 0 30px rgba(0,0,0,.35)}
 .panel-head{display:flex;justify-content:space-between;align-items:center}
@@ -303,7 +304,7 @@ body.touch #btn-fire{display:grid}
   <div class="plate p1 steel" id="hp0">
     <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
     <div class="pinfo">
-      <div class="pname"><span class="nm">나</span><span class="turn-tag">차례</span><span class="dly"></span></div>
+      <div class="pname"><span class="nm">나</span><span class="turn-tag">턴</span><span class="dly"></span></div>
       <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
     </div>
   </div>
@@ -321,13 +322,13 @@ body.touch #btn-fire{display:grid}
   <div class="plate p2 steel" id="hp1">
     <div class="badge"><svg viewBox="0 0 32 22" aria-hidden="true"><path d="M3 15h26l-3-6H19l-1-3h-6l-1 3H6z" fill="#fff"/><path d="M16 6l11-4" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><rect x="2" y="15" width="28" height="6" rx="3" fill="#0b0f0c" opacity=".55"/></svg></div>
     <div class="pinfo">
-      <div class="pname"><span class="dly"></span><span class="turn-tag">차례</span><span class="nm">컴퓨터</span></div>
+      <div class="pname"><span class="dly"></span><span class="turn-tag">턴</span><span class="nm">컴퓨터</span></div>
       <div class="hpbar"><b></b><i></i><span class="hpnum">100</span></div>
     </div>
   </div>
   <div class="chips left">
     <button id="btn-menu" class="chip" type="button">처음으로</button>
-    <button id="btn-tune" class="chip" type="button">조율판</button>
+    <button id="btn-tune" class="chip" type="button">설정</button>
   </div>
   <canvas id="minimap" aria-label="전체 지도. 누르거나 끌면 그곳을 봅니다"></canvas>
   <div class="chips right">
@@ -351,14 +352,14 @@ body.touch #btn-fire{display:grid}
   </div>
   <div class="c-main">
     <div class="power-row">
-      <span class="cap">힘</span>
-      <div id="gauge" aria-label="힘 게이지"><div class="fill"></div><div class="ticks"></div><div class="prev" hidden><span>이전</span></div></div>
+      <span class="cap">파워</span>
+      <div id="gauge" aria-label="파워 게이지"><div class="fill"></div><div class="ticks"></div><div class="prev" hidden><span>이전</span></div></div>
       <div class="lcd" id="pow-lcd"><b id="pow">0</b></div>
     </div>
     <div id="cards" role="toolbar" aria-label="포탄 고르기"></div>
   </div>
   <div class="c-fire">
-    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 · C 카드(5~7) · P 넘기기 · T 조율판</small></div>
+    <div class="keyhint desk"><span class="key" id="keycap">SPACE</span><span>누르고 있다가 떼면 발사</span><small>←→ 이동 · ↑↓ 각도 · 1~4 포탄 · C 아이템(5~7) · P 넘기기 · T 설정</small></div>
     <div class="tpad angpad">
       <button class="tbtn" type="button" data-hold="up" aria-label="각도 올리기">▲</button>
       <button class="tbtn" type="button" data-hold="down" aria-label="각도 내리기">▼</button>
@@ -367,7 +368,7 @@ body.touch #btn-fire{display:grid}
   </div>
 </footer>
 
-<div id="fxpop" class="steel" hidden role="dialog" aria-label="카드"></div>
+<div id="fxpop" class="steel" hidden role="dialog" aria-label="아이템"></div>
 <div id="banner" aria-live="polite"></div>
 <div id="toast" class="steel" aria-live="polite"></div>
 
@@ -376,7 +377,7 @@ body.touch #btn-fire{display:grid}
     <div class="brand">
       <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="27" fill="#1a1208" stroke="#e2a948" stroke-width="3"/><path d="M10 46C20 14 40 10 54 30" fill="none" stroke="#ffd27a" stroke-width="3" stroke-dasharray="3 5" stroke-linecap="round"/><circle cx="54" cy="30" r="5" fill="#ff7a2f" stroke="#1a1208" stroke-width="2"/><path d="M32 8v8M32 48v8M8 32h8M48 32h8" stroke="#e2a948" stroke-width="3" stroke-linecap="round"/></svg>
       <div>
-        <p class="eyebrow">바람 · 각도 · 힘</p>
+        <p class="eyebrow">바람 · 각도 · 파워</p>
         <h1 class="title">탄착점</h1>
       </div>
     </div>
@@ -386,14 +387,14 @@ body.touch #btn-fire{display:grid}
       <button class="mode" type="button" data-mode="duo"><b>둘이서 번갈아</b><span>한 기기로 1P와 2P</span></button>
       <button class="mode" type="button" data-mode="practice"><b>과녁 연습</b><span>상대가 쏘지 않아 손맛 조율에 좋음</span></button>
     </div>
-    <p class="howto">한 차례는 20초입니다. 센 포탄일수록 딜레이가 커져 다음 차례가 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 기체를 고릅니다. 기체마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다. 카드는 한 차례에 한 장, 이번 발에 얹는 효과입니다(끌어오기, 따라가기). 쓰면 덱에서 새로 1장을 뽑습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~4 포탄, C 카드. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
+    <p class="howto">한 턴은 20초입니다. 센 포탄일수록 딜레이가 커져 다음 턴이 늦게 오고, 딜레이가 작은 쪽이 먼저 쏩니다. 상대보다 딜레이가 충분히 작으면 연달아 쏠 수 있습니다.<br>방식을 고른 뒤 탱크를 고릅니다. 탱크마다 체력, 이동 거리, 각도 범위, 전용탄이 다릅니다. 아이템은 한 턴에 하나, 이번 발에 얹는 효과입니다(끌어오기, 따라가기). 쓰면 새로 하나를 받습니다.<br>각도는 탱크 차체를 기준으로 잽니다. 경사에 서면 실제로 날아가는 각도가 달라지니 아래 각도계의 '실제' 값을 함께 보세요.<br>PC: ←→ 이동, ↑↓ 각도, 스페이스를 누르고 있다가 떼면 발사, 1~4 포탄, C 아이템. 휴대폰: 화면 아래 버튼. 소리가 납니다.</p>
   </div>
 </section>
 
 <section id="pick" class="overlay" hidden>
   <div class="sheet pick">
     <div class="pick-head">
-      <div><p class="eyebrow" id="pick-eyebrow">컴퓨터와 대결</p><h2 id="pick-title">기체 고르기</h2></div>
+      <div><p class="eyebrow" id="pick-eyebrow">컴퓨터와 대결</p><h2 id="pick-title">탱크 고르기</h2></div>
       <div class="diff" id="pick-diff" hidden></div>
       <button class="chip" type="button" id="pick-back">뒤로</button>
     </div>
@@ -421,8 +422,8 @@ body.touch #btn-fire{display:grid}
   </div>
 </section>
 
-<aside id="panel" hidden aria-label="조율판">
-  <div class="panel-head"><h2>조율판</h2><button class="chip" type="button" id="panel-close">닫기</button></div>
+<aside id="panel" hidden aria-label="설정">
+  <div class="panel-head"><h2>설정</h2><button class="chip" type="button" id="panel-close">닫기</button></div>
   <p class="panel-note">바꾼 값은 바로 적용되고 이 브라우저에 저장됩니다. 마음에 드는 값이 나오면 수치 복사를 눌러 대화창에 붙여 주세요. 손맛 효과를 껐다 켜며 비교해 보실 수 있습니다.</p>
   <div class="panel-actions">
     <button class="chip on" type="button" id="juice-master">손맛 효과 켜짐</button>
@@ -449,7 +450,7 @@ const NO_GROUND = H + 1000;
 
 const DEFAULTS = {
   gravity: 500, windMax: 90, powerScale: 1.0, gaugeSpeed: 70, pingPong: false, moveSpeed: 70, aimLineOn: true,
-  viewZoom: 1.0,
+  viewZoom: 1.0, readoutOn: true, latencyOn: false,
   juice: true,
   hitStop: 70, hitStopOn: true,
   shake: reduceMotion ? 0.35 : 1.0, shakeOn: true,
@@ -833,8 +834,8 @@ function beginTurn(again){
   aiJob = null; aiMoved = false;
   renderCards();
   let label;
-  if (mode === 'ai') label = again ? (cur === 0 ? '한 번 더!' : '컴퓨터 한 번 더') : (cur === 0 ? '내 차례' : '컴퓨터 차례');
-  else if (mode === 'duo') label = (cur === 0 ? '1P' : '2P') + (again ? ' 한 번 더!' : ' 차례');
+  if (mode === 'ai') label = again ? (cur === 0 ? '한 번 더!' : '컴퓨터 한 번 더') : (cur === 0 ? '내 턴' : '컴퓨터 턴');
+  else if (mode === 'duo') label = (cur === 0 ? '1P' : '2P') + (again ? ' 한 번 더!' : ' 턴');
   else label = turnCount === 1 ? '과녁을 맞혀 보세요' : '다음 발';
   banner(label, COLORS[cur].light);
   Snd.tick(0.5);
@@ -872,7 +873,7 @@ function passTurn(timeout){
   const t = tanks[cur];
   Snd.chargeStop(); Snd.rumble(false); fireHeld = false; power = 0;
   t.delay += PASS_DELAY + Math.floor(turnT) * 10;
-  toast(timeout ? '시간이 다 되어 차례를 넘깁니다' : '차례를 넘겼습니다', 1600);
+  toast(timeout ? '시간이 다 되어 턴을 넘깁니다' : '턴을 넘겼습니다', 1600);
   Snd.tick(0.8);
   endTurn();
 }
@@ -1336,8 +1337,8 @@ function renderCards(){
   }).join('');
   const n = t.hand.filter(Boolean).length, armed = t.arm ? FXD[t.arm] : null;
   const fresh = isHuman(cur) && performance.now() < t.freshUntil;
-  const fxBtn = `<button class="card fx${armed ? ' armed' : ''}${fresh ? ' fresh' : ''}" type="button" id="fx-btn" ${!ctl || !n ? 'disabled' : ''} aria-expanded="${fxOpen}" aria-label="카드 ${n}장${armed ? ', ' + armed.name + ' 준비됨' : ''}">
-      <span class="k">5</span><span class="well">${FX_ICONS[armed ? armed.id : 'stack']}<span class="bd">${n}</span></span><span class="txt"><span class="nm">${armed ? armed.name : '카드'}</span><span class="ct">${armed ? '+' + armed.delay : n + '장 · 덱 ' + t.deck.length}</span></span></button>`;
+  const fxBtn = `<button class="card fx${armed ? ' armed' : ''}${fresh ? ' fresh' : ''}" type="button" id="fx-btn" ${!ctl || !n ? 'disabled' : ''} aria-expanded="${fxOpen}" aria-label="아이템 ${n}개${armed ? ', ' + armed.name + ' 준비됨' : ''}">
+      <span class="k">5</span><span class="well">${FX_ICONS[armed ? armed.id : 'stack']}<span class="bd">${n}</span></span><span class="txt"><span class="nm">${armed ? armed.name : '아이템'}</span><span class="ct">${armed ? '+' + armed.delay : n + '개 · 남은 ' + t.deck.length}</span></span></button>`;
   box.innerHTML = shellBtns + fxBtn;
   renderFxPop();
 }
@@ -1347,7 +1348,7 @@ function renderFxPop(){
   const show = fxOpen && t && isHuman(cur) && phase === 'aim' && canControl();
   pop.hidden = !show;
   if (!show) return;
-  pop.innerHTML = `<div class="fx-head"><b>카드</b><span>한 차례에 한 장, 이번 발에 얹힙니다 · 덱 ${t.deck.length}장</span></div><div class="fx-list">` +
+  pop.innerHTML = `<div class="fx-head"><b>아이템</b><span>한 턴에 하나, 이번 발에 얹힙니다 · 남은 ${t.deck.length}개</span></div><div class="fx-list">` +
     t.hand.map((id, k) => {
       if (!id) return `<div class="fxcard empty">빈 칸</div>`;
       const f = FXD[id], on = t.arm === id && t.hand.indexOf(id) === k;
@@ -1880,7 +1881,47 @@ function render(){
     }
   }
   drawMarkers();
+  drawReadout();
+  drawLatency();
   if (screenFlash > 0 && J('flash')){ ctx.fillStyle = `rgba(255,244,220,${screenFlash})`; ctx.fillRect(0, 0, cw, ch); }
+}
+
+// Angle and power under the tank while aiming, so the eyes can stay on the battlefield (the console has them too).
+function drawReadout(){
+  const t = tanks[cur];
+  if (!S.readoutOn || !t || !t.alive || t.gone || !isHuman(cur) || (phase !== 'aim' && phase !== 'charging')) return;
+  const p = toScreen(t.x, t.y);
+  let y = p.y + 18;
+  if (y > playBot - 10) y = toScreen(t.x, t.y - 92).y;   // no room under it: put it above the hp bar
+  if (p.x < 0 || p.x > cw || y < playTop || y > playBot) return;
+  const pw = phase === 'charging' ? `파워 ${Math.round(power)}` : (t.lastPower !== null ? `이전 ${Math.round(t.lastPower)}` : '');
+  const text = `${Math.round(t.elev)}°` + (pw ? `  ${pw}` : '');
+  ctx.save();
+  ctx.font = "15px 'Black Han Sans', sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(11,15,12,.85)'; ctx.strokeText(text, p.x, y);
+  ctx.fillStyle = phase === 'charging' ? '#ffd27a' : '#fff6e6'; ctx.fillText(text, p.x, y);
+  ctx.restore();
+}
+// Touch latency check (settings): time from the input event's own timestamp to the end of the frame that drew it.
+// It leaves out the touch panel's scan before the event and the compositor and display after the frame.
+const lat = { down: null, list: [] };
+window.addEventListener('pointerdown', e => { if (S.latencyOn) lat.down = e.timeStamp; }, true);
+function noteLatency(){
+  if (lat.down === null) return;
+  const ms = performance.now() - lat.down;
+  lat.down = null;
+  if (ms >= 0 && ms < 2000){ lat.list.push(ms); if (lat.list.length > 20) lat.list.shift(); }
+}
+function drawLatency(){
+  if (!S.latencyOn) return;
+  const n = lat.list.length, last = n ? lat.list[n - 1] : 0, avg = n ? lat.list.reduce((a, b) => a + b, 0) / n : 0;
+  const text = n ? `터치→그림 ${Math.round(last)}ms · 평균 ${Math.round(avg)}ms (${n}회)` : '화면이나 버튼을 눌러 보세요';
+  ctx.save();
+  ctx.font = "12px 'IBM Plex Sans KR', sans-serif"; ctx.textBaseline = 'top';
+  const w = ctx.measureText(text).width + 14;
+  ctx.fillStyle = 'rgba(10,14,10,.75)'; ctx.fillRect(10, playTop + 6, w, 22);
+  ctx.fillStyle = '#ffbf4a'; ctx.fillText(text, 17, playTop + 11);
+  ctx.restore();
 }
 
 // Tanks outside the play area get a marker on its edge, pointing at them. Tapping one looks at that tank.
@@ -2336,12 +2377,14 @@ function buzz(p){ if (J('vibrate') && navigator.vibrate){ try { navigator.vibrat
 /* ---------- tuning panel ---------- */
 const PANEL = [
   { title: '규칙', rows: [
-    { key: 'turnTime', label: '차례 제한 시간', min: 0, max: 60, step: 5, fmt: v => v ? v + '초' : '없음' },
-    { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 차례가 늦음)' },
-    { key: 'handSize', label: '카드 손패(다음 판부터)', min: 0, max: 3, step: 1, fmt: v => v ? v + '장' : '없음' }
+    { key: 'turnTime', label: '턴 제한 시간', min: 0, max: 60, step: 5, fmt: v => v ? v + '초' : '없음' },
+    { on: 'delayOn', label: '딜레이 턴제(센 포탄일수록 다음 턴이 늦음)' },
+    { key: 'handSize', label: '아이템 칸(다음 판부터)', min: 0, max: 3, step: 1, fmt: v => v ? v + '개' : '없음' }
   ]},
   { title: '화면', rows: [
-    { key: 'viewZoom', label: '화면 확대', min: 0.6, max: 1.6, step: 0.05, fmt: v => '×' + v.toFixed(2) }
+    { key: 'viewZoom', label: '화면 확대', min: 0.6, max: 1.6, step: 0.05, fmt: v => '×' + v.toFixed(2) },
+    { on: 'readoutOn', label: '탱크 아래 각도·파워 표시' },
+    { on: 'latencyOn', label: '터치 지연 표시(입력부터 그림까지)' }
   ]},
   { title: '물리', rows: [
     { key: 'gravity', label: '중력', min: 200, max: 1000, step: 10, fmt: v => v },
@@ -2437,7 +2480,7 @@ function openPick(m){
 function renderPick(){
   const who = pickMode === 'duo' ? (pickStep === 0 ? '1P ' : '2P ') : '';
   $('#pick-eyebrow').textContent = MODE_NAMES[pickMode];
-  $('#pick-title').textContent = who + '기체 고르기';
+  $('#pick-title').textContent = who + '탱크 고르기';
   renderDiff();
   const box = $('#mobiles');
   const topHp = Math.max(...MOBILES.map(m => m.hp)), topFuel = Math.max(...MOBILES.map(m => m.fuel));
@@ -2545,7 +2588,7 @@ document.addEventListener('webkitfullscreenchange', syncFull);
 let lastT = performance.now();
 function frame(now){
   const rdt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-  checkTerrain(); update(rdt); render(); drawMinimap(now); updateHUD();
+  checkTerrain(); update(rdt); render(); drawMinimap(now); updateHUD(); noteLatency();
   requestAnimationFrame(frame);
 }
 function start(data){
@@ -2570,7 +2613,7 @@ function start(data){
 // Test hook: open the page with ?test to expose internals to the scripts in tests/.
 if (/[?&]test\b/.test(location.search)) window.__tc = { update, startGame, planShot, fire, moveTank, endTurn, isHuman, carve, passTurn,
   toScreen, paintTerrain, aiLog: () => aiLog, shellValue, searchShot, driveTo, drawMinimap, W, H, layers: { terr, back, minimap: mm }, MOBILES, openPick, renderCards,
-  setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; },
+  setHand: (t, ids) => { t.hand = ids.slice(); t.deck = []; }, setAutoAll: v => { autoAll = !!v; }, lat,
   setAmmo: (t, ids) => { t.ammo = { basic: Infinity }; for (const id of ids) t.ammo[id] = (t.ammo[id] || 0) + 1; },
   standAt, applyFx, toggleFxPop, armFx, FXD,
   view: () => ({ x: cam.x, y: cam.y, z: cam.z, s: viewScale(), cw, ch, playTop, playBot, look: look && { ...look }, markers: markers.map(m => ({ x: m.x, y: m.y, i: m.t.i })) }),
