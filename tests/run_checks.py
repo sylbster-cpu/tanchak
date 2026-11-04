@@ -278,14 +278,14 @@ with sync_playwright() as p:
           landed and all(abs(o["x"] - o["boom"]) <= 262 and abs(o["x"] - o["x0"]) > 40 and not o["air"] and not o["hop"] and o["gap"] >= 56 for o in landed), r)
 
     # pull: in range, the other tank is brought next to the shooter; out of range nothing moves
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const sk=T.S().aiSkill;T.S().aiSkill=1;const out=[];   // aim without error
       for(let k=0;k<6;k++){T.startGame('duo',['digger','digger']);for(let i=0;i<30;i++)T.update(1/60);const g=T.get(),a=g.tanks[0],b=g.tanks[1];
         const far=k%2===1;T.setHand(a,['pull']);a.arm='pull';const bx0=b.x;
         // aim just short of the other tank (in range) or far short of it (out of range)
         const pl=T.planShot(a,false,'basic');a.facing=pl.facing;a.elev=pl.elev;T.fire(a,far?pl.power*0.55:pl.power);
         for(let i=0;i<900;i++){T.update(1/60);if(T.get().phase==='aim'||T.get().phase==='over')break;}
         out.push({far,moved:Math.round(Math.abs(b.x-bx0)),gap:Math.round(Math.abs(b.x-a.x)),air:b.airborne,alive:b.alive});}
-      T.S().turnTime=20;return out;})()""")
+      T.S().turnTime=20;T.S().aiSkill=sk;return out;})()""")
     near = [o for o in r if not o["far"] and o["alive"]]
     check("pull card: an opponent within range lands beside the shooter; one out of range stays",
           near and all(100 <= o["gap"] <= 302 and o["moved"] > 100 and not o["air"] for o in near)
@@ -351,6 +351,24 @@ with sync_playwright() as p:
     ev("window.__tc.S().aiSkill=0.5")
     check("picker: difficulty chips set the computer's skill (only against the computer)",
           r["skill"] == 0.85 and r["on"] == "어려움" and r["shown"] and not r["duoShown"], r)
+
+    # ---- fixes from the review ----
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['light','digger']);for(let i=0;i<30;i++)T.update(1/60);const a=T.get().tanks[0];
+      T.setHand(a,['pull','warp']);T.toggleFxPop(true);const open=!document.getElementById('fxpop').hidden;
+      const c=document.getElementById('game');c.dispatchEvent(new PointerEvent('pointerdown',{pointerId:7,clientX:600,clientY:380,bubbles:true}));
+      c.dispatchEvent(new PointerEvent('pointerup',{pointerId:7,clientX:600,clientY:380,bubbles:true}));
+      T.S().turnTime=20;return {open,closed:document.getElementById('fxpop').hidden};})()""")
+    check("touching the battlefield puts the card hand away", r["open"] and r["closed"], r)
+
+    pg.set_viewport_size({"width": 360, "height": 780})
+    time.sleep(0.3)
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['howitzer','digger']);for(let i=0;i<30;i++)T.update(1/60);
+      const a=T.get().tanks[0];a.facing=1;a.elev=85;T.fire(a,95);let worst=0;
+      for(let i=0;i<600;i++){T.update(1/60);const v=T.view();const bottom=T.toScreen(0,T.H).y;if(T.get().phase==='flying')worst=Math.max(worst,v.playBot-bottom);if(T.get().phase!=='flying')break;}
+      T.S().turnTime=20;return {worstGapAboveConsole:Math.round(worst)};})()""")
+    pg.set_viewport_size({"width": 1280, "height": 720})
+    time.sleep(0.3)
+    check("tall screen, high shot: the world's bottom never floats above the console", r["worstGapAboveConsole"] <= 1, r)
 
     check("no page errors", not errs, errs[:5])
     b.close()

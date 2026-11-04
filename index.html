@@ -543,6 +543,7 @@ function measureHud(){
   playTop = hudTopBottom;
   playBot = (con.height > 0 && con.top > playTop + 40) ? con.top : ch;
   $('#toast').style.top = Math.round(hudTopBottom + 8) + 'px';
+  if (fxOpen) renderFxPop();   // the hand sits on the console; follow it when the layout changes
 }
 
 /* ---------- terrain ---------- */
@@ -1121,14 +1122,13 @@ function tiltAt(x, y){
 }
 // where the tank would stop if it drove toward tx, by moveTank's rules (fuel, climbing, the other tank)
 function driveTo(t, tx){
-  const o = tanks[1 - t.i], dir = Math.sign(tx - t.x);
+  const dir = Math.sign(tx - t.x);
   let x = t.x, y = t.y, fuel = t.fuel;
   while (dir && (tx - x) * dir > 1 && fuel > 0){
     const nx = clamp(x + dir * 2, 26, W - 26);
     if (nx === x) break;
-    if (o && o.alive && !o.gone && Math.sign(o.x - x) === dir && Math.abs(o.x - nx) < 56 && Math.abs(o.y - y) < 44) break;
-    let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, y - t.m.climb - 4));
-    if (gt < y - t.m.climb) break;
+    const gt = stepGround(t, x, y, nx, dir);
+    if (gt === null) break;
     let g = NO_GROUND; for (const ox of [-16, -8, 0, 8, 16]) g = Math.min(g, groundY(nx + ox, Math.min(y, gt) - 14));
     if (g >= H - 20) break;   // would drop into a hole to the bottom
     x = nx; fuel -= 2; y = g;
@@ -1492,16 +1492,21 @@ function chargeStep(rdt){
   if (power <= 0 && powerDir < 0){ power = 0; powerDir = 1; }
   Snd.chargeLevel(power);
 }
+// One step of driving from (x, y) to nx: the ground height there, or null when the other tank is in the way
+// or the ground just ahead rises more than the mobile can climb. moveTank and the computer's driveTo both use it.
+function stepGround(t, x, y, nx, dir){
+  const o = tanks[1 - t.i];
+  if (o && o.alive && !o.gone && Math.sign(o.x - x) === dir && Math.abs(o.x - nx) < 56 && Math.abs(o.y - y) < 44) return null;
+  let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, y - t.m.climb - 4));
+  return gt < y - t.m.climb ? null : gt;
+}
 function moveTank(t, dir, rdt){
   t.facing = dir;
   if (t.fuel <= 0 || t.airborne){ Snd.rumble(false); return; }
   const step = dir * S.moveSpeed * t.m.speed * rdt;
   const nx = clamp(t.x + step, 26, W - 26);
-  const o = tanks[1 - t.i];
-  if (o && o.alive && !o.gone && Math.sign(o.x - t.x) === dir && Math.abs(o.x - nx) < 56 && Math.abs(o.y - t.y) < 44){ Snd.rumble(false); return; }
-  // the highest ground just ahead may be at most t.m.climb above the tracks
-  let gt = NO_GROUND; for (const ox of [-12, 0, 12]) gt = Math.min(gt, groundY(nx + ox, t.y - t.m.climb - 4));
-  if (gt < t.y - t.m.climb){ Snd.rumble(false); return; }
+  const gt = stepGround(t, t.x, t.y, nx, dir);
+  if (gt === null){ Snd.rumble(false); return; }
   t.x = nx; t.fuel = Math.max(0, t.fuel - Math.abs(step)); t.tread += step;
   if (gt < t.y) t.y = gt;
   Snd.rumble(true);
@@ -1677,8 +1682,10 @@ function updateCamera(rdt){
 function clampCam(s){
   const vw = cw / s, vh = ch / s;
   cam.x = vw >= W ? W / 2 : clamp(cam.x, vw / 2, W - vw / 2);
-  // the bottom of the world may come up to the console's top edge but no further; above, leave room for high shots
-  cam.y = clamp(cam.y, -900 + vh / 2, H - (playBot - ch / 2) / s);
+  // the bottom of the world may come up to the console's top edge but no further; above, leave room for high shots.
+  // On a tall screen zoomed far out the two limits cross; then keep the world's bottom at the console.
+  const lo = -900 + vh / 2, hi = H - (playBot - ch / 2) / s;
+  cam.y = lo > hi ? hi : clamp(cam.y, lo, hi);
 }
 function lookAtWorld(x, y, fy){
   look = framed(x, y, fy, viewScale());
@@ -1699,6 +1706,7 @@ function toScreen(x, y){ const s = viewScale(); return { x: cw / 2 + (x - cam.x)
 // drag the battlefield to look around; a tap returns to the action, or jumps to a tank marker at the screen edge
 let drag = null;
 cvs.addEventListener('pointerdown', e => {
+  if (fxOpen){ fxOpen = false; renderCards(); }   // touching the battlefield puts the card hand away
   if (drag || (e.pointerType === 'mouse' && e.button !== 0) || phase === 'menu') return;
   drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
   try { cvs.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1974,6 +1982,7 @@ function minimapLook(e){
 }
 mm.addEventListener('pointerdown', e => {
   e.preventDefault(); mmPointer = e.pointerId;
+  if (fxOpen){ fxOpen = false; renderCards(); }
   try { mm.setPointerCapture(e.pointerId); } catch (err) {}
   minimapLook(e);
 });

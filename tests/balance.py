@@ -55,7 +55,6 @@ with sync_playwright() as p:
     pg.goto(URL); time.sleep(0.5)
     info = pg.evaluate("({mobiles: window.__tc.MOBILES.map(m => [m.id, m.name])})")
     mobs = [m[0] for m in info["mobiles"]]; names = dict(info["mobiles"])
-    delays = pg.evaluate("Object.fromEntries(['basic','heavy','split','drill','calm','pierce','bounce'].map(id=>[id, 0]))")
     t0 = time.time()
     games = []
     for a in mobs:
