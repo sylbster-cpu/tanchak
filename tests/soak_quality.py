@@ -28,7 +28,7 @@ with sync_playwright() as p:
       q.finishes.push({mobs:g0.tanks.map(t=>t.m.id),winningSide,map:id,shots:g0.stats.map(x=>x.shots)});
       const pairs=[];for(const a of mobs)for(const b of mobs)if(a.id!==b.id)pairs.push([a.id,b.id]);
       const [first,second]=pairs[q.games%pairs.length];
-      T.startGame('ai',[first,second],T.MAPS[Math.floor(q.games/pairs.length)%3].id);
+      T.startGame('ai',[first,second],T.MAPS[Math.floor(q.games/pairs.length)%3].id); q.prevTurn=0;
     }
     T.update(1/60);
     const g=T.get();q.frames++;
@@ -53,7 +53,7 @@ with sync_playwright() as p:
   data=page.evaluate(js,min(batch,frames-k))
   if data['issues']:break
   if (k+batch)%30000==0:print('progress',data['frames'],'games',data['games'],'moves',data['moves'],flush=True)
- out={'frames':data['frames'],'games':data['games'],'moves':data['moves'],'draws':data['draws'],'perMap':data['perMap'],'perMobile':data['perMobile'],'finishes':data['finishes'],'issues':data['issues'],'pageErrors':errs,'seconds':round(time.time()-begin,1)}
+ out={'frames':data['frames'],'games':data['games'],'turns':data['turns'],'moves':data['moves'],'draws':data['draws'],'perMap':data['perMap'],'perMobile':data['perMobile'],'finishes':data['finishes'],'issues':data['issues'],'pageErrors':errs,'seconds':round(time.time()-begin,1)}
  print(json.dumps(out,ensure_ascii=False,indent=2),flush=True)
  (root/'qa-output'/'soak.json').write_text(json.dumps(out,ensure_ascii=False,indent=2))
  b.close()

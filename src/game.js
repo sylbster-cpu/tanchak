@@ -342,12 +342,17 @@ function checkTerrain(){
   if ((tctx.isContextLost && tctx.isContextLost()) || (bctx.isContextLost && bctx.isContextLost())){ terrLost = true; return; }
   if (terrLost) paintTerrain();
 }
+// pageshow and visibilitychange both fire when a page comes back, so one resume can arrive twice
+let lastResume = -1e9;
 function onResume(){
   if (document.hidden) return;
-  lastT = performance.now(); // returning from a background tab does not consume the paused turn clock
-  paintTerrain();
-  restoreVisualArt(true);
-  Snd.resume();
+  if (performance.now() - lastResume > 500){
+    paintTerrain();
+    restoreVisualArt(true);
+    Snd.resume();
+    lastResume = performance.now();
+  }
+  lastT = performance.now();   // after the repaint: coming back does not use up the paused turn clock
 }
 document.addEventListener('visibilitychange', onResume);
 window.addEventListener('pageshow', onResume);
@@ -621,8 +626,8 @@ function buildDeck(){
   for (let i = d.length - 1; i > 0; i--){ const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
   return d;
 }
-function playFx(t, id){
-  const k = t.hand.indexOf(id);
+function playFx(t, id, slot){
+  const k = t.hand[slot] === id ? slot : t.hand.indexOf(id);
   if (k < 0) return;
   if (!t.deck.length && mode === 'practice') t.deck = buildDeck();
   t.hand[k] = t.deck.length ? t.deck.pop() : null;
@@ -634,7 +639,7 @@ function makeTank(i, x, mid){
   const deck = buildDeck(), hand = [];
   for (let k = 0; k < S.handSize; k++) hand.push(deck.length ? deck.pop() : null);
   return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
-    fuel: m.fuel, ammo, hand, deck, arm: null, hop: null, fresh: -1, freshUntil: 0, lastHitTurn: -100, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+    fuel: m.fuel, ammo, hand, deck, arm: null, armSlot: -1, hop: null, fresh: -1, freshUntil: 0, lastHitTurn: -100, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
@@ -677,7 +682,7 @@ function beginTurn(again){
   const t = tanks[cur];
   t.fuel = t.m.fuel;
   if (!hasShell(t, t.sel)) t.sel = 'basic';
-  t.arm = null; fxOpen = false;
+  t.arm = null; t.armSlot = -1; fxOpen = false;
   if (t.fresh >= 0){ t.fresh = -1; t.freshUntil = performance.now() + 1600; }   // light up the card button: a new card came in
   power = 0; powerDir = 1;
   phaseT = 0;
@@ -760,8 +765,8 @@ function fire(t, p){
   const fx = t.arm && t.hand.includes(t.arm) ? t.arm : null;
   t.delay += shotDelay(t, t.sel) + (fx ? FXD[fx].delay : 0) + Math.floor(turnT) * 10;
   if (t.ammo[t.sel] !== Infinity) t.ammo[t.sel]--;
-  if (fx) playFx(t, fx);
-  t.arm = null; fxOpen = false;
+  if (fx) playFx(t, fx, t.armSlot);
+  t.arm = null; t.armSlot = -1; fxOpen = false;
   const pv = pivot(t), dir = aimDir(t, t.facing, t.elev);
   const v = p / 100 * 1000 * S.powerScale * def.vMul;
   const shot = { owner: t, hit: false, direct: false, pieceHits: new Map(), fx, fxDone: false };
@@ -960,7 +965,7 @@ function flight(t, x, y, vx, vy, def, target, age){
     if (x < -400 || x > W + 400 || y > H + 60) return 1e9;
     if (drilling){ if (left <= 0) return score(x, y); continue; }
     if (bounced && (fuse += h) > BOUNCE_FUSE) return score(x, y);
-    if (age > 0.07 && isSolid(x, y)){
+    if (isSolid(x, y)){   // from the first step, like updateShells: a muzzle in a wall bursts there
       if (def.drill){ drilling = true; vx *= 0.5; vy *= 0.5; continue; }
       if (def.bounce && !bounced){
         b.x = x; b.y = y; b.vx = vx; b.vy = vy; bounceOff(b, h);
@@ -1003,7 +1008,7 @@ function shotDamage(def, d){
 // Tries every angle and power for one shell from v (the tank, or a copy of it standing somewhere else).
 // coarse uses a quarter of the grid, for comparing spots and shells. The pick favours shots whose neighbours
 // also land close, so the aiming error added afterwards still tends to hit; ev is the damage to expect once
-// that error (the same spread planJob adds) is taken into account. Yields once per angle.
+// that error (the same spread planJob adds) is taken into account. Yields every 8 simulations and after each angle.
 function* searchShot(v, def, target, coarse){
   const facing = target.x >= v.x ? 1 : -1;
   const es = [], ps = [], de = coarse ? 4 : 2, dp = coarse ? 3 : 1.5;
@@ -1118,7 +1123,7 @@ function* planJob(t, mayMove, force){
     if (t.hand.includes('pull') && target.y < t.y - 60 && r.d < PULL_RANGE * 0.5) fx = 'pull';
     else if (t.hand.includes('warp') && stuck) fx = 'warp';
   }
-  return { sel: pick, fx, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, 5, 100), miss: r.d };
+  return { sel: pick, fx, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, MIN_FIRE_POWER, 100), miss: r.d };
 }
 // all at once (tests, and the soak test's stand-in for a human); the game itself runs planJob a few ms per frame
 function planShot(t, mayMove, force){
@@ -1283,7 +1288,7 @@ function renderFxPop(){
   pop.innerHTML = `<div class="fx-head"><b>아이템</b><span>한 발에 하나 · 남은 보급 ${t.deck.length}개</span></div><div class="fx-list">` +
     t.hand.map((id, k) => {
       if (!id) return `<div class="fxcard empty">빈 칸</div>`;
-      const f = FXD[id], on = t.arm === id && t.hand.indexOf(id) === k;
+      const f = FXD[id], on = t.arm === id && (t.hand[t.armSlot] === id ? t.armSlot === k : t.hand.indexOf(id) === k);
       return `<button class="fxcard${on ? ' on' : ''}" type="button" data-fx="${k}" aria-pressed="${on}"><span class="well">${FX_ICONS[id]}</span><b>${f.name}</b><span class="d">${f.desc}</span><span class="c">딜레이 +${f.delay}</span><span class="k">${k + 5}</span></button>`;
     }).join('') + '</div>';
   const r = $('#cards').getBoundingClientRect(), w = Math.min(460, cw - 24);
@@ -1301,7 +1306,8 @@ function armFx(k){
   const t = tanks[cur];
   if (!t || !canControl() || phase !== 'aim' || !t.hand[k]) return;
   const id = t.hand[k];
-  t.arm = t.arm === id ? null : id;
+  const same = t.arm === id && t.armSlot === k;
+  t.arm = same ? null : id; t.armSlot = same ? -1 : k;
   fxOpen = false; Snd.tick(0.7); renderCards();
   if (t.arm) toast(`${FXD[id].name} 선택 · 다음 포탄에 적용됩니다`, 1600);
 }
@@ -1377,8 +1383,10 @@ function updateControl(dt, rdt, clockDelta = rdt){
     const left = S.turnTime - turnT, sec = Math.ceil(left);
     if (sec <= 5 && sec >= 1 && sec !== tickSec){ tickSec = sec; Snd.tick(1.4); if (sec <= 3) buzz(15); }
     if (left <= 0){
-      if (phase === 'charging'){ fireHeld = false; fire(t, power); toast('시간이 다 되어 그대로 발사했습니다', 1600); }
-      else passTurn(true);
+      // out of time while charging: fire with that power, unless it is below the tap threshold, which would
+      // only drop the shell on the shooter (the same rule as releasing early)
+      if (phase === 'charging' && power >= MIN_FIRE_POWER){ fireHeld = false; fire(t, power); toast('시간이 다 되어 그대로 발사했습니다', 1600); }
+      else { cancelFire(); passTurn(true); }
       return;
     }
   }
@@ -1404,7 +1412,7 @@ function updateControl(dt, rdt, clockDelta = rdt){
       const plan = aiJob.plan; aiJob = null;
       aiLog.push(plan); if (aiLog.length > 50) aiLog.shift();
       if (plan.move !== undefined){ aiMoveTo = plan.move; aiMoved = true; aiStuck = 0; phase = 'aiMove'; phaseT = 0; }
-      else { aiPlan = plan; t.sel = plan.sel; t.arm = plan.fx || null; t.facing = plan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
+      else { aiPlan = plan; t.sel = plan.sel; t.arm = plan.fx || null; t.armSlot = plan.fx ? t.hand.indexOf(plan.fx) : -1; t.facing = plan.facing; phase = 'aiAim'; phaseT = 0; renderCards(); }
     }
   } else if (phase === 'aiMove'){
     phaseT += rdt;

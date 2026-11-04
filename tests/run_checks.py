@@ -394,6 +394,27 @@ with sync_playwright() as p:
     ev("window.__tc.S().latencyOn=false")
     check("touch latency check records a time after a press", r["n"] >= 1 and all(0 <= v < 500 for v in r["ms"]), r)
 
+    # ---- fixes from the 2026-11-04 inspection ----
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=20;T.startGame('duo',['digger','digger']);const g=T.get(),a=g.tanks[0],hp0=a.hp;
+      for(let i=0;i<Math.round(60*19.95);i++)T.update(1/60);   // press fire with a few hundredths of a second left
+      window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space'}));for(let i=0;i<30;i++)T.update(1/60);
+      window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space'}));const s=T.get();
+      return {shots:s.stats[0].shots,cur:s.cur,hp:a.hp,hp0};})()""")
+    check("time running out at very low power passes the turn instead of dropping a shell on the shooter",
+          r["shots"] == 0 and r["cur"] == 1 and r["hp"] == r["hp0"], r)
+
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);for(let i=0;i<20;i++)T.update(1/60);
+      const a=T.get().tanks[0];T.setHand(a,['warp','warp']);a.deck=['pull'];T.armFx(1);T.toggleFxPop(true);
+      const on=[...document.querySelectorAll('#fxpop .fxcard')].map(c=>c.classList.contains('on'));
+      a.sel='basic';a.facing=-1;a.elev=80;T.fire(a,20);T.S().turnTime=20;return {on,hand:a.hand.slice()};})()""")
+    check("two identical items: the tapped one shows as chosen and is the one used", r["on"] == [False, True] and r["hand"] == ["warp", "pull"], r)
+
+    r = ev("""(()=>{const T=window.__tc;const S=T.S(),sk=S.aiSkill;S.aiSkill=0;let lo=999;
+      for(let k=0;k<25;k++){T.startGame('ai',['digger','digger']);const g=T.get();const b=g.tanks[1];g.tanks[0].x=b.x-260;g.tanks[0].y=0;for(let i=0;i<90;i++)T.update(1/60);
+        lo=Math.min(lo,T.planShot(b).power);}
+      S.aiSkill=sk;return {minPower:+lo.toFixed(1)};})()""")
+    check("the computer never plans a shot below the tap threshold", r["minPower"] >= 12, r)
+
     check("no page errors", not errs, errs[:5])
     b.close()
 
