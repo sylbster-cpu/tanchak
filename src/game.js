@@ -6,10 +6,12 @@
 const W = 3200, H = 900;
 const FEATURE = 1600;               // terrain and scenery wavelengths are set per this many px, so a wider map gets more hills, not stretched ones
 const VIEW_W = 1100, VIEW_H = 520;  // at zoom 1 the screen shows about this much of the world (the tighter of the two wins)
+// windEvery: the wind holds for this many turns, so both sides get to correct a shot in the same wind on these
+// basic maps. A harder map can change it more often (1 = a new wind every turn).
 const MAPS = [
-  { id: 'frontier', name: '전선', desc: '완만한 능선과 중간 언덕', sky: ['#769caa','#7ea4ad','#88adb1','#94b6b5','#a3c0b8','#b3c9bb','#c4d1bc','#d4d8bf'], scene: ['#82a6a2','#577f7a','#3d6359'] },
-  { id: 'canyon', name: '협곡', desc: '낮은 계곡을 사이에 둔 원거리 포격', sky: ['#9c928c','#ac9c91','#bda99a','#cab5a0','#d4bfa4','#dfc9ae','#e6d3ba','#edddc4'], scene: ['#b7a39a','#957b72','#6e5d58'] },
-  { id: 'highland', name: '고원', desc: '높은 중앙 지형과 급경사 측면', sky: ['#687b99','#748ba7','#8196ac','#91a5b5','#a6b7bd','#bac6c2','#cbd0be','#ded5bb'], scene: ['#8c9fab','#637f91','#476777'] }
+  { id: 'frontier', name: '전선', desc: '완만한 능선과 중간 언덕', sky: ['#769caa','#7ea4ad','#88adb1','#94b6b5','#a3c0b8','#b3c9bb','#c4d1bc','#d4d8bf'], scene: ['#82a6a2','#577f7a','#3d6359'], windEvery: 4 },
+  { id: 'canyon', name: '협곡', desc: '낮은 계곡을 사이에 둔 원거리 포격', sky: ['#9c928c','#ac9c91','#bda99a','#cab5a0','#d4bfa4','#dfc9ae','#e6d3ba','#edddc4'], scene: ['#b7a39a','#957b72','#6e5d58'], windEvery: 4 },
+  { id: 'highland', name: '고원', desc: '높은 중앙 지형과 급경사 측면', sky: ['#687b99','#748ba7','#8196ac','#91a5b5','#a6b7bd','#bac6c2','#cbd0be','#ded5bb'], scene: ['#8c9fab','#637f91','#476777'], windEvery: 4 }
 ];
 const MAP_BY_ID = Object.fromEntries(MAPS.map(m => [m.id, m]));
 const MAP_KEY = 'shellbound-map-v1';   // key from before the name went back to 탄착점; kept so the saved choice survives
@@ -679,8 +681,10 @@ function beginTurn(again){
   turnCount++;
   clearLook();
   turnT = 0; tickSec = -1;
-  const prev = wind / Math.max(1, S.windMax);
-  wind = clamp(prev * 0.35 + rand(-1, 1) * 0.85, -1, 1) * S.windMax;
+  if ((turnCount - 1) % (currentMap.windEvery || 1) === 0){
+    const prev = wind / Math.max(1, S.windMax);
+    wind = clamp(prev * 0.35 + rand(-1, 1) * 0.85, -1, 1) * S.windMax;
+  }
   const t = tanks[cur];
   t.fuel = t.m.fuel;
   if (!hasShell(t, t.sel)) t.sel = 'basic';
@@ -2239,6 +2243,7 @@ function updateHUD(){
     hud.windSvg.style.transform = wind < 0 ? 'scaleX(-1)' : 'none';
     hud.windSvg.style.opacity = lvl === 0 ? 0.3 : 1;
     pipEls.forEach((e, k) => { e.classList.toggle('on', k < lvl); e.classList.toggle('strong', k < lvl && lvl >= 7); });
+    const box = document.getElementById('wind'); box.classList.remove('shift'); void box.offsetWidth; box.classList.add('shift');   // the wind now changes only every few turns: make a change noticeable
   });
   const t = tanks[cur];
   if (!t) return;

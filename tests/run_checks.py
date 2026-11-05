@@ -447,6 +447,13 @@ with sync_playwright() as p:
       T.setWind(0);T.S().turnTime=20;return {self,bad};})()""")
     check("split: a piece landing on the shooter counts against the shot", r["self"] >= 3 and r["bad"] == 0, r)
 
+    # On the basic maps the wind holds for windEvery (4) turns, then changes.
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=20;T.startGame('duo',['digger','digger'],'frontier');const w=[];
+      for(let k=0;k<9;k++){for(let i=0;i<5;i++)T.update(1/60);w.push(T.get().wind);T.passTurn();}
+      return {w:w.map(x=>+x.toFixed(2)),every:T.MAPS.map(m=>m.windEvery)};})()""")
+    w = r["w"]
+    check("wind holds for four turns on the basic maps", r["every"] == [4, 4, 4] and len(set(w[0:4])) == 1 and len(set(w[4:8])) == 1 and w[4] != w[0] and w[8] != w[4], r)
+
     check("no page errors", not errs, errs[:5])
     b.close()
 
