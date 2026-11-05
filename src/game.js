@@ -611,15 +611,23 @@ function hasShell(t, id){ return t.ammo[id] > 0; }
 // one may be played per turn, it adds its delay to the shot and takes effect where the shot first bursts.
 // Playing one draws the next; an empty deck leaves the slot empty (practice mode deals a fresh deck).
 const PULL_RANGE = 160, PULL_MIN = 100;
+const POWER_MUL = 1.25, RUSH_MUL = 1.5;   // 파워업: this shot's damage. 과열: the other side's gauge speed on its next turn
 const FX = [
   { id: 'pull', name: '끌어오기', delay: 150, desc: '포탄이 터진 곳 근처의 상대를 내 탱크 옆으로 끌어옵니다.' },
-  { id: 'warp', name: '탄착 이동', delay: 120, desc: '포탄이 폭발한 곳 근처의 안전한 지점으로 이동합니다.' }
+  { id: 'warp', name: '탄착 이동', delay: 120, desc: '포탄이 폭발한 곳 근처의 안전한 지점으로 이동합니다.' },
+  { id: 'power', name: '파워업', delay: 250, desc: '이번 포탄의 피해가 25% 커집니다.' },
+  { id: 'rush', name: '과열', delay: 150, desc: '포탄이 터진 곳 근처의 상대는 다음 턴에 파워 게이지가 1.5배 빨라집니다.' }
 ];
 const FXD = Object.fromEntries(FX.map(f => [f.id, f]));
-const FX_DECK = [['pull', 3], ['warp', 3]];
-// The delays are kept small on purpose: with +350 a pull usually handed the pulled player two shots in a row at
-// point-blank range, which made the card a loss.
+const FX_DECK = [['pull', 2], ['warp', 2], ['power', 2], ['rush', 2]];
+// The moving cards' delays are kept small on purpose: with +350 a pull usually handed the pulled player two shots
+// in a row at point-blank range, which made the card a loss. 파워업 costs more: on a heavy shell it turns a direct
+// hit of 58 into 72, most of a Scout's 90. Even at +250 it stays a little ahead per 1000 delay (+370 would be even).
+// 과열 at 1.5x: one frame of a 70/s gauge already moves the shot about 33 px at power 70; at 2x a frame is 64 px,
+// about the whole basic-shell hit zone, which turns aiming into luck on a phone.
 const FX_ICONS = {
+  power: '<svg viewBox="0 0 24 24"><path d="M5 12l7-7 7 7M5 19l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  rush: '<svg viewBox="0 0 24 24"><rect x="2" y="10" width="20" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4.5" y="12.5" width="12" height="3" fill="currentColor"/><path d="M9 3.5l2 3.5M14 3l1.5 4M19 4l1 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   pull: '<svg viewBox="0 0 24 24"><path d="M20 12H8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 7l-5 5 5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="currentColor"/><path d="M3 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".6"/></svg>',
   warp: '<svg viewBox="0 0 24 24"><path d="M3 19C5 7 15 4 20 12" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 3" stroke-linecap="round"/><path d="M17 8l3.5 4.5L15 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 21h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
   stack: '<svg viewBox="0 0 24 24"><rect x="7" y="3" width="12" height="16" rx="2" fill="currentColor" opacity=".45"/><rect x="4" y="6" width="12" height="16" rx="2" fill="currentColor"/></svg>'
@@ -643,7 +651,7 @@ function makeTank(i, x, mid){
   const deck = buildDeck(), hand = [];
   for (let k = 0; k < S.handSize; k++) hand.push(deck.length ? deck.pop() : null);
   return { i, x, m, y: 0, vy: 0, hp: m.hp, maxHp: m.hp, shownHp: m.hp, alive: true, gone: false, facing: i === 0 ? 1 : -1, elev: clamp(45, m.ang[0], m.ang[1]),
-    fuel: m.fuel, ammo, hand, deck, arm: null, armSlot: -1, hop: null, fresh: -1, freshUntil: 0, lastHitTurn: -100, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
+    fuel: m.fuel, ammo, hand, deck, arm: null, armSlot: -1, rush: false, rushNow: false, hop: null, fresh: -1, freshUntil: 0, lastHitTurn: -100, sel: 'basic', delay: 0, lastPower: null, lastElev: null, lastFacing: null, recoil: 0, hurt: 0, airborne: false, tilt: 0, tread: 0 };
 }
 function clampElev(t, e){ return clamp(e, t.m.ang[0], t.m.ang[1]); }
 function randomMobile(){ return MOBILES[(Math.random() * MOBILES.length) | 0].id; }
@@ -689,6 +697,8 @@ function beginTurn(again){
   t.fuel = t.m.fuel;
   if (!hasShell(t, t.sel)) t.sel = 'basic';
   t.arm = null; t.armSlot = -1; fxOpen = false;
+  t.rushNow = t.rush; t.rush = false;   // 과열 lasts the hit tank's next turn, whenever that comes
+  if (t.rushNow) toast(`${FXD.rush.name}: 이번 턴은 파워 게이지가 ${RUSH_MUL}배 빠릅니다`, 2200);
   if (t.fresh >= 0){ t.fresh = -1; t.freshUntil = performance.now() + 1600; }   // light up the card button: a new card came in
   power = 0; powerDir = 1;
   phaseT = 0;
@@ -810,8 +820,9 @@ function explode(x, y, def, direct, owner, shot){
     if (!t.alive) continue;
     const cx = t.x, cy = t.y - TANK_CY, d = Math.hypot(cx - x, cy - y);
     let dmg = 0;
-    if (t === direct) dmg = Math.round(def.dmg * (def.directMul || 1.25));
-    else if (d < def.r + TANK_R) dmg = Math.round(def.dmg * clamp(1 - (d - 10) / (def.r + TANK_R), 0, 1));
+    const pm = shot && shot.fx === 'power' ? POWER_MUL : 1;
+    if (t === direct) dmg = Math.round(def.dmg * (def.directMul || 1.25) * pm);
+    else if (d < def.r + TANK_R) dmg = Math.round(def.dmg * clamp(1 - (d - 10) / (def.r + TANK_R), 0, 1) * pm);
     if (dmg <= 0) continue;
     if (shot && def.id === 'child'){   // pieces of one split shell do not stack in full on one tank
       const n = shot.pieceHits.get(t) || 0;
@@ -883,7 +894,11 @@ function applyFx(shot, x, y){
     // at least PULL_MIN away, outside the puller's own basic-shell blast
     const p = nearestStand(me.x, me, PULL_MIN, 300, side) || nearestStand(me.x, me, PULL_MIN, 300, -side);
     if (p) hopTo(o, p); else toast(`${f.name}: 데려올 곳이 없습니다`, 1600);
-  }
+  } else if (shot.fx === 'rush'){
+    if (!o || !o.alive || o.gone) return;
+    if (Math.hypot(o.x - x, o.y - TANK_CY - y) > PULL_RANGE){ toast(`${f.name}: 상대가 범위 밖입니다`, 1600); return; }
+    o.rush = true; toast(`${f.name}: 상대의 다음 턴 게이지가 ${RUSH_MUL}배 빨라집니다`, 1800); Snd.tick(1);
+  }   // 파워업 already acted in explode()
 }
 // a short arc to the new spot, so the eye can follow where the tank went
 function hopTo(t, p){
@@ -1126,14 +1141,21 @@ function* planJob(t, mayMove, force){
   // 3. aim it on the full grid, then add the aiming error
   const r = yield* searchShot(t, SHELL[pick], target, false);
   const err = 1 - S.aiSkill;
-  // 4. an effect card, by two plain rules: pull the player down off much higher ground, and follow the shot
-  //    out of a spot with no shot and no way to drive to one
+  // 4. an effect card, by plain rules: pull the player down off much higher ground; follow the shot out of a spot
+  //    with no shot and no way to drive to one; power up a likely hit that would not finish anyway; overheat the
+  //    other side's gauge when the shot should land near it
   let fx = null;
   if (smart && r.d < 1e8){
     if (t.hand.includes('pull') && target.y < t.y - 60 && r.d < PULL_RANGE * 0.5) fx = 'pull';
     else if (t.hand.includes('warp') && stuck) fx = 'warp';
+    else if (t.hand.includes('power') && r.d < 12 && shotDamage(SHELL[pick], r.d) < target.hp) fx = 'power';
+    else if (t.hand.includes('rush') && r.d < PULL_RANGE * 0.5) fx = 'rush';
   }
-  return { sel: pick, fx, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * err * 9, MIN_FIRE_POWER, 100), miss: r.d };
+  // The computer stops the gauge exactly, so an overheated gauge costs it power error instead. A faster gauge adds
+  // the same timing slip for anyone: guessing a hand's release jitters by 30-50 ms (an assumption, not measured),
+  // that is about 2.8 power on a 70/s gauge and 4.2 at 1.5x, so about 3 more, added to its usual error.
+  const pe = t.rushNow ? Math.hypot(err * 9, 3) : err * 9;
+  return { sel: pick, fx, facing: r.facing, elev: clampElev(t, Math.round(r.e + randn() * err * 4)), power: clamp(r.p + randn() * pe, MIN_FIRE_POWER, 100), miss: r.d };
 }
 // all at once (tests, and the soak test's stand-in for a human); the game itself runs planJob a few ms per frame
 function planShot(t, mayMove, force){
@@ -1436,7 +1458,7 @@ function updateControl(dt, rdt, clockDelta = rdt){
     if (Math.abs(diff) <= step){ t.elev = aiPlan.elev; phaseT += rdt; if (phaseT > 0.35){ phase = 'aiCharge'; power = 0; powerDir = 1; Snd.chargeStart(); } }
     else t.elev += Math.sign(diff) * step;
   } else if (phase === 'aiCharge'){
-    power += S.gaugeSpeed * rdt;
+    power += S.gaugeSpeed * (t.rushNow ? RUSH_MUL : 1) * rdt;
     let done = false;
     if (power >= aiPlan.power){ power = aiPlan.power; done = true; }
     Snd.chargeLevel(power);
@@ -1444,7 +1466,7 @@ function updateControl(dt, rdt, clockDelta = rdt){
   }
 }
 function chargeStep(rdt){
-  power += powerDir * S.gaugeSpeed * rdt;
+  power += powerDir * S.gaugeSpeed * (tanks[cur]?.rushNow ? RUSH_MUL : 1) * rdt;
   if (power >= 100){
     if (S.pingPong){ power = 100 - (power - 100); powerDir = -1; }
     else power = 100;
@@ -2293,6 +2315,7 @@ function updateHUD(){
     hud.pow.textContent = Math.round(v);
     hud.fill.classList.toggle('max', v >= 99.5 && !S.pingPong);
   });
+  setIf('rush', !!t.rushNow && TURN_PHASES.includes(phase), v => $('#gauge').classList.toggle('rush', v));
   setIf('prev', t.lastPower === null ? 'none' : Math.round(t.lastPower * 10) / 10 + ':' + cur, () => {
     hud.prev.hidden = t.lastPower === null;
     if (t.lastPower !== null) hud.prev.style.left = t.lastPower + '%';

@@ -151,14 +151,17 @@ with sync_playwright() as p:
     # Drag on the battlefield to look away, then a tap brings the camera back. Uses real input and the real frame loop.
     ev("(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo');for(let i=0;i<150;i++)T.update(1/60);})()")
     v0 = ev("window.__tc.view()")
-    pg.mouse.move(1150, 400); pg.mouse.down()
-    for x in range(1150, 100, -50): pg.mouse.move(x, 400)
+    # drag away from the tank: tanks spawn anywhere, so tank 0 can start on either half of the screen
+    left = ev("(()=>{const T=window.__tc,t=T.get().tanks[0];return T.toScreen(t.x,t.y-15).x<T.view().cw/2;})()")
+    xs = range(1150, 100, -50) if left else range(100, 1150, 50)
+    pg.mouse.move(xs[0], 400); pg.mouse.down()
+    for x in xs: pg.mouse.move(x, 400)
     pg.mouse.up(); time.sleep(0.3)
     v1 = ev("window.__tc.view()")
     pg.mouse.click(640, 380); time.sleep(1.6)
     v2 = ev("""(()=>{const T=window.__tc,v=T.view(),t=T.get().tanks[0],p=T.toScreen(t.x,t.y-15);return {look:v.look,x:Math.round(p.x),cw:v.cw,markers:v.markers};})()""")
     check("drag looks around (marker shows the tank), tap comes back",
-          v1["look"] is not None and v1["x"] - v0["x"] > 400 and any(m["i"] == 0 for m in v1["markers"]) and v2["look"] is None and 40 < v2["x"] < v2["cw"] - 40,
+          v1["look"] is not None and abs(v1["x"] - v0["x"]) > 400 and any(m["i"] == 0 for m in v1["markers"]) and v2["look"] is None and 40 < v2["x"] < v2["cw"] - 40,
           {"dx": round(v1["x"] - v0["x"]), "markers": v1["markers"], "after_tap": v2})
 
     pg.mouse.move(1150, 400); pg.mouse.down(); pg.mouse.move(900, 400); pg.mouse.move(700, 400); pg.mouse.up()
@@ -260,16 +263,37 @@ with sync_playwright() as p:
           r["last"] == "armored" and r2["mode"] == "ai" and r2["mobs"][0] == "light" and r2["mobs"][1] in ("light", "armored", "howitzer", "digger"), {**r, **r2})
 
     # ---- effect cards ----
-    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);const a=T.get().tanks[0];
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);const a=T.get().tanks[0];a.hp=a.maxHp=9999;
       const all=[...a.deck,...a.hand].filter(Boolean).sort().join(',');const hand0=a.hand.length;const seen=[];
-      for(let k=0;k<8;k++){const g=T.get();if(g.cur!==0){T.passTurn(false);}const id=a.hand.find(Boolean);if(!id)break;
-        a.arm=id;a.sel='basic';a.facing=-1;a.elev=80;const d0=a.delay;T.fire(a,8);seen.push([id,a.delay-d0,a.deck.length,a.hand.filter(Boolean).length]);
+      for(let k=0;k<10;k++){const g=T.get();if(g.cur!==0){T.passTurn(false);}const id=a.hand.find(Boolean);if(!id)break;
+        a.arm=id;a.armSlot=a.hand.indexOf(id);a.sel='basic';a.facing=-1;a.elev=80;const d0=a.delay;T.fire(a,8);seen.push([id,a.delay-d0,a.deck.length,a.hand.filter(Boolean).length]);
         for(let i=0;i<600;i++){T.update(1/60);if(T.get().phase==='aim'||T.get().phase==='over')break;}}
-      T.S().turnTime=20;return {all,hand0,seen,fxDelay:{pull:T.FXD.pull.delay,warp:T.FXD.warp.delay}};})()""")
-    check("effect cards: 6-card deck (3 pull, 3 follow), hand of 2, each play adds its delay and draws one",
-          r["all"] == "pull,pull,pull,warp,warp,warp" and r["hand0"] == 2 and len(r["seen"]) == 6
+      T.S().turnTime=20;return {all,hand0,seen,fxDelay:Object.fromEntries(Object.entries(T.FXD).map(([k,f])=>[k,f.delay]))};})()""")
+    check("effect cards: 8-card deck (2 each of 4), hand of 2, each play adds its delay and draws one",
+          r["all"] == "power,power,pull,pull,rush,rush,warp,warp" and r["hand0"] == 2 and len(r["seen"]) == 8
           and all(s[1] == 780 + r["fxDelay"][s[0]] for s in r["seen"])
-          and [s[2] for s in r["seen"]] == [3, 2, 1, 0, 0, 0] and [s[3] for s in r["seen"]] == [2, 2, 2, 2, 1, 0], r)
+          and [s[2] for s in r["seen"]] == [5, 4, 3, 2, 1, 0, 0, 0] and [s[3] for s in r["seen"]] == [2, 2, 2, 2, 2, 2, 1, 0], r)
+
+    # 파워업 multiplies that shot's damage by 1.25.
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];
+      const mk=fx=>({owner:a,hit:false,direct:false,pieceHits:new Map(),fx,fxDone:true});const out={};
+      for(const fx of [null,'power']){b.hp=999;T.explode(b.x,b.y-15,T.SHELL.heavy,b,a,mk(fx));out[fx||'plain']=999-b.hp;}
+      T.S().turnTime=20;return out;})()""")
+    check("power-up card: the shot does 25% more damage", r == {"plain": 58, "power": 72}, r)
+
+    # 과열: a burst near the other tank makes its gauge 1.5x faster for its next turn only; out of range it does nothing.
+    r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo',['digger','digger']);const g=T.get(),a=g.tanks[0],b=g.tanks[1];
+      for(let i=0;i<20;i++)T.update(1/60);
+      const charge=()=>{window.dispatchEvent(new KeyboardEvent('keydown',{code:'Space'}));for(let i=0;i<30;i++)T.update(1/60);T.syncView();
+        const p=+document.getElementById('pow').textContent,glow=document.getElementById('gauge').classList.contains('rush');
+        window.dispatchEvent(new KeyboardEvent('keyup',{code:'Space'}));for(let i=0;i<900;i++){T.update(1/60);if(T.get().phase==='aim')break;}return [p,glow];};
+      T.applyFx({owner:a,fx:'rush'},b.x+400,b.y-15);const far=b.rush;
+      T.applyFx({owner:a,fx:'rush'},b.x+60,b.y-15);const near=b.rush;
+      if(T.get().cur===0)T.passTurn(false);const first=charge();
+      if(T.get().cur===0)T.passTurn(false);const second=charge();
+      T.S().turnTime=20;return {far,near,first,second};})()""")
+    check("overheat card: next turn's gauge runs 1.5x (and glows), then back to normal; out of range no effect",
+          r["far"] is False and r["near"] is True and 50 <= r["first"][0] <= 55 and r["first"][1] and 33 <= r["second"][0] <= 37 and not r["second"][1], r)
 
     # follow: the shooter ends up standing near where the shot burst
     r = ev("""(()=>{const T=window.__tc;T.S().turnTime=0;const out=[];

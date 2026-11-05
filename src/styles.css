@@ -102,6 +102,7 @@ canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block}
 #gauge{position:relative;height:26px;border-radius:8px;background:var(--lcd);border:2px solid #000;box-shadow:inset 0 2px 6px rgba(0,0,0,.75)}
 #gauge .fill{position:absolute;left:2px;top:2px;bottom:2px;width:0;border-radius:5px;background:linear-gradient(90deg,#fff0b0,#ffbf4a 40%,#ff7a2f 78%,#ff3a2a)}
 #gauge .fill.max{animation:hot .12s steps(2) infinite}
+#gauge.rush{border-color:#ff6a2a;box-shadow:0 0 0 2px rgba(255,106,42,.55),0 0 12px rgba(255,106,42,.6)}
 @keyframes hot{50%{filter:brightness(1.55)}}
 #wind.shift{animation:windshift 1.4s ease-out}
 @keyframes windshift{0%,30%,60%{filter:brightness(1.7)}15%,45%,100%{filter:none}}
