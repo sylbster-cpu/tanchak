@@ -149,19 +149,17 @@ with sync_playwright() as p:
     check("camera follows the shell across the map", all(o["frames"] > 60 and o["offscreen"] == 0 for o in r), r)
 
     # Drag on the battlefield to look away, then a tap brings the camera back. Uses real input and the real frame loop.
-    ev("(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo');for(let i=0;i<150;i++)T.update(1/60);})()")
+    # Tanks spawn anywhere, so place them: tank 0 at 900 leaves room for the camera to move right, away from it.
+    ev("(()=>{const T=window.__tc;T.S().turnTime=0;T.startGame('duo');const g=T.get();g.tanks[0].x=900;g.tanks[1].x=2300;g.tanks.forEach(t=>t.y=0);for(let i=0;i<150;i++)T.update(1/60);})()")
     v0 = ev("window.__tc.view()")
-    # drag away from the tank: tanks spawn anywhere, so tank 0 can start on either half of the screen
-    left = ev("(()=>{const T=window.__tc,t=T.get().tanks[0];return T.toScreen(t.x,t.y-15).x<T.view().cw/2;})()")
-    xs = range(1150, 100, -50) if left else range(100, 1150, 50)
-    pg.mouse.move(xs[0], 400); pg.mouse.down()
-    for x in xs: pg.mouse.move(x, 400)
+    pg.mouse.move(1150, 400); pg.mouse.down()
+    for x in range(1150, 100, -50): pg.mouse.move(x, 400)
     pg.mouse.up(); time.sleep(0.3)
     v1 = ev("window.__tc.view()")
     pg.mouse.click(640, 380); time.sleep(1.6)
     v2 = ev("""(()=>{const T=window.__tc,v=T.view(),t=T.get().tanks[0],p=T.toScreen(t.x,t.y-15);return {look:v.look,x:Math.round(p.x),cw:v.cw,markers:v.markers};})()""")
     check("drag looks around (marker shows the tank), tap comes back",
-          v1["look"] is not None and abs(v1["x"] - v0["x"]) > 400 and any(m["i"] == 0 for m in v1["markers"]) and v2["look"] is None and 40 < v2["x"] < v2["cw"] - 40,
+          v1["look"] is not None and v1["x"] - v0["x"] > 400 and any(m["i"] == 0 for m in v1["markers"]) and v2["look"] is None and 40 < v2["x"] < v2["cw"] - 40,
           {"dx": round(v1["x"] - v0["x"]), "markers": v1["markers"], "after_tap": v2})
 
     pg.mouse.move(1150, 400); pg.mouse.down(); pg.mouse.move(900, 400); pg.mouse.move(700, 400); pg.mouse.up()
@@ -331,8 +329,9 @@ with sync_playwright() as p:
           r["open"] and r["cards"] == 2 and r["armed"] == "warp" and r["closed"] and r["btn"] and r["off"] is None and r["pulled"] == "pull" and r["shell"] == "heavy", r)
 
     r = ev("""(()=>{const T=window.__tc;const S=T.S(),sk=S.aiSkill,tt=S.turnTime;S.aiSkill=0.85;S.turnTime=0;let tried=0,pulled=0;
-      for(let k=0;k<30&&tried<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];if(me.y>ai.y-60)continue;
+      for(let k=0;k<40&&tried<4;k++){T.startGame('ai',['digger','digger']);const g=T.get(),me=g.tanks[0],ai=g.tanks[1];if(me.y>ai.y-60)continue;
         T.passTurn(false);T.setHand(ai,['pull','warp']);for(let i=0;i<60*4;i++){T.update(1/60);if(T.get().phase==='aiAim')break;}
+        if(me.y>ai.y-60)continue;   // the height that counts is the settled one the computer planned from
         tried++;if(ai.arm==='pull')pulled++;}
       S.aiSkill=sk;S.turnTime=tt;return {tried,pulled};})()""")
     check("computer pulls the player down from much higher ground", r["tried"] == 0 or r["pulled"] >= r["tried"] - 1, r)
